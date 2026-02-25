@@ -18,7 +18,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useState } from "react";
-import { SpeechBubble } from "@rfahmi/rfui";
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Internal: Perlin noise engine (used by the flame canvas loop)
@@ -71,7 +71,7 @@ function buildPerlin() {
 // Public types
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** The eight available mood expressions. Controls eye shape. */
+/** The nine available mood expressions. Controls eye shape. */
 export type AvatarMood =
   | "idle"        // neutral, round eyes
   | "happy"       // bottom-clipped (smile-eyes)
@@ -80,7 +80,8 @@ export type AvatarMood =
   | "excited"     // slightly bottom-clipped, smaller radius
   | "suspicious"  // asymmetric top-clip (side-eye)
   | "angry"       // furrowed, narrowed eyes (V-brow)
-  | "sad";        // drooping inner brow (inverted V)
+  | "sad"         // drooping inner brow (inverted V)
+  | "thinking";   // eyes shifted up-left, contemplative look
 
 export interface BanaspatiProps {
   // ── Mood ──────────────────────────────────────────────────────────────────
@@ -181,8 +182,8 @@ export interface BanaspatiProps {
 
   /**
    * Text to display in a speech bubble above the avatar.
-   * Each time a new non-empty string is set, the bubble appears and
-   * auto-hides after 5 seconds.
+   * The bubble stays visible as long as a truthy string is set.
+   * Pass an empty string, `undefined`, or `null` to dismiss it.
    */
   speech?: string;
 
@@ -219,6 +220,7 @@ const EYE_STATES: Record<AvatarMood, EyeClip> = {
   suspicious: { topL: 0,  topR: 0,  bot: 0,  radius: "10px", w: 18, h: 30 },
   angry:      { topL: 0,  topR: 0,  bot: 0,  radius: "6px",  w: 18, h: 30 },
   sad:        { topL: 0,  topR: 0,  bot: 0,  radius: "10px", w: 18, h: 30 },
+  thinking:   { topL: 0,  topR: 0,  bot: 0,  radius: "50%",  w: 16, h: 26 },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -252,7 +254,6 @@ export default function Banaspati({
   // ── Speech bubble state ────────────────────────────────────────────────────
   const [bubbleText, setBubbleText]       = useState<string | undefined>();
   const [bubbleVisible, setBubbleVisible] = useState(false);
-  const speechTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const speechClearRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
@@ -260,18 +261,12 @@ export default function Banaspati({
       clearTimeout(speechClearRef.current);
       setBubbleText(speech);
       setBubbleVisible(true);
-      clearTimeout(speechTimerRef.current);
-      speechTimerRef.current = setTimeout(() => {
-        setBubbleVisible(false);
-        // Remove element after fade-out animation completes
-        speechClearRef.current = setTimeout(() => setBubbleText(undefined), 250);
-      }, 5000);
     } else {
       setBubbleVisible(false);
+      // Remove element after fade-out animation completes
       speechClearRef.current = setTimeout(() => setBubbleText(undefined), 250);
     }
     return () => {
-      clearTimeout(speechTimerRef.current);
       clearTimeout(speechClearRef.current);
     };
   }, [speech, speechKey]);
@@ -328,6 +323,10 @@ export default function Banaspati({
   // ── Apply eye shape from mood ──────────────────────────────────────────────
   const applyEyeMood = useCallback((m: AvatarMood) => {
     const s = EYE_STATES[m];
+    // Reset any transform offset from "thinking" mood
+    [eyeLeftRef.current, eyeRightRef.current].forEach(el => {
+      if (el) el.style.transform = "";
+    });
     // Apply size per mood (surprised = larger eyes)
     [eyeLeftRef.current, eyeRightRef.current].forEach(el => {
       if (el) { el.style.width = `${s.w}px`; el.style.height = `${s.h}px`; }
@@ -366,6 +365,17 @@ export default function Banaspati({
         eyeRightRef.current.style.clipPath    = `inset(58% 0% 0% 0%)`;
         eyeRightRef.current.style.borderRadius = s.radius;
       }
+    } else if (m === "thinking") {
+      // Contemplative look — eyes shift up-left, slight size difference
+      [eyeLeftRef.current, eyeRightRef.current].forEach(el => {
+        if (el) {
+          el.style.width       = `${s.w}px`;
+          el.style.height      = `${s.h}px`;
+          el.style.clipPath    = `inset(0% 0% 0% 0%)`;
+          el.style.borderRadius = s.radius;
+          el.style.transform   = "translate(-3px, -4px)";
+        }
+      });
     } else {
       if (eyeLeftRef.current) {
         eyeLeftRef.current.style.clipPath     = `inset(${s.topL}% 0% ${s.bot}% 0%)`;
@@ -684,6 +694,14 @@ export default function Banaspati({
           0%   { transform: var(--sr) translateX(var(--sd)) scale(1); opacity: 1; }
           100% { transform: var(--sr) translateX(calc(var(--sd) + 24px)) scale(0); opacity: 0; }
         }
+        @keyframes ba-bubbleIn {
+          0%   { opacity: 0; transform: translateX(-50%) translateY(6px) scale(0.92); }
+          100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+        }
+        @keyframes ba-bubbleOut {
+          0%   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+          100% { opacity: 0; transform: translateX(-50%) translateY(6px) scale(0.92); }
+        }
         .ba-eye {
           will-change: transform;
           transform-origin: center center;
@@ -704,17 +722,6 @@ export default function Banaspati({
         height: `${BALL_SIZE + BOUNCE_HEIGHT + 80}px`,
         userSelect: "none",
       }}>
-        {/* Speech bubble — appears above the avatar */}
-        {bubbleText && (
-          <div key={`${bubbleText}-${speechKey}`}>
-            <SpeechBubble
-              visible={bubbleVisible}
-              style={{ bottom: `${BALL_SIZE + BOUNCE_HEIGHT + 16}px` }}
-            >
-              {bubbleText}
-            </SpeechBubble>
-          </div>
-        )}
         {/* Ground shadow — size & opacity driven by physics loop */}
         <div
           ref={shadowRef}
@@ -804,6 +811,67 @@ export default function Banaspati({
           </div>
         </div>
       </div>
+
+      {/* Speech bubble — appears below the avatar */}
+      {bubbleText && (
+        <div
+          key={`${bubbleText}-${speechKey}`}
+          style={{
+            position: "relative",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 10,
+            pointerEvents: "none",
+            animation: bubbleVisible
+              ? "ba-bubbleIn 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards"
+              : "ba-bubbleOut 0.22s ease-in forwards",
+            marginTop: "4px",
+          }}
+        >
+          {/* Upward-pointing tail (border outline) */}
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: -1 }}>
+            <div style={{
+              width: 0, height: 0,
+              borderLeft: "7px solid transparent",
+              borderRight: "7px solid transparent",
+              borderBottom: "7px solid rgba(160,190,220,0.35)",
+            }} />
+          </div>
+          {/* Upward-pointing tail (fill) */}
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: -8, position: "relative", zIndex: 1 }}>
+            <div style={{
+              width: 0, height: 0,
+              borderLeft: "6px solid transparent",
+              borderRight: "6px solid transparent",
+              borderBottom: "6px solid rgba(12, 22, 42, 0.92)",
+            }} />
+          </div>
+          {/* Bubble body */}
+          <div style={{
+            position: "relative",
+            background: "rgba(12, 22, 42, 0.75)",
+            borderTop: "1px solid rgba(160,190,220,0.35)",
+            borderRight: "1px solid rgba(160,190,220,0.35)",
+            borderBottom: "1px solid rgba(160,190,220,0.35)",
+            borderLeft: "3px solid rgba(160,190,220,0.35)",
+            color: "#c8d8ec",
+            fontFamily: "ui-monospace, 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Menlo, Consolas, monospace",
+            fontSize: "0.75rem",
+            fontWeight: 400,
+            lineHeight: 1.55,
+            letterSpacing: "0.04em",
+            padding: "8px 16px",
+            maxWidth: 400,
+            minWidth: 40,
+            width: "max-content",
+            textAlign: "center",
+            wordBreak: "break-word",
+            whiteSpace: "pre-wrap",
+          }}>
+            {bubbleText}
+          </div>
+        </div>
+      )}
     </>
   );
 }

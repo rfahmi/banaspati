@@ -32,6 +32,72 @@ export default function Demo() {
   const [speechInput, setSpeechInput] = useState("");
   const [followCursor, setFollowCursor] = useState(true);
   const [lookAt, setLookAt] = useState({ x: 0, y: 0 });
+  const [jsonInput, setJsonInput] = useState(
+    JSON.stringify(
+      {
+        speech: "",
+        mood: "",
+        visualState: {
+          scale: null,
+          opacity: null,
+          flameAmplitude: null,
+          flameIntensity: null,
+          flameDrift: null,
+          flameNoiseScale: null,
+          flameUpwardBias: null,
+          flameSpread: null,
+          gaze: { x: null, y: null, z: null },
+        },
+      },
+      null,
+      2
+    )
+  );
+  const [jsonError, setJsonError] = useState<string | null>(null);
+
+  const VALID_MOODS: AvatarMood[] = ["idle", "happy", "surprised", "sleepy", "excited", "suspicious", "angry", "sad", "thinking"];
+
+  const applyJson = (raw: string) => {
+    try {
+      const data = JSON.parse(raw);
+      setJsonError(null);
+
+      if (data.mood && typeof data.mood === "string") {
+        if (VALID_MOODS.includes(data.mood as AvatarMood)) {
+          setMood(data.mood as AvatarMood);
+        } else {
+          setJsonError(`Unknown mood "${data.mood}". Valid: ${VALID_MOODS.join(", ")}`);
+          return;
+        }
+      }
+      if (data.speech && typeof data.speech === "string") {
+        setSpeech(data.speech);
+        setSpeechKey((k) => k + 1);
+      }
+
+      const vs = data.visualState;
+      if (vs) {
+        if (vs.scale != null)          setSphereScale(vs.scale);
+        if (vs.opacity != null)        setSphereOpacity(vs.opacity);
+        if (vs.flameAmplitude != null) setFlameAmplitude(vs.flameAmplitude);
+        if (vs.flameIntensity != null) setFlameIntensity(vs.flameIntensity);
+        if (vs.flameDrift != null)     setFlameDrift(vs.flameDrift);
+        if (vs.flameNoiseScale != null) setFlameNoiseScale(vs.flameNoiseScale);
+        if (vs.flameUpwardBias != null) setFlameUpwardBias(vs.flameUpwardBias);
+        if (vs.flameSpread != null)    setFlameSpread(vs.flameSpread);
+
+        if (vs.gaze && (vs.gaze.x != null || vs.gaze.y != null)) {
+          setFollowCursor(false);
+          setLookAt({
+            x: vs.gaze.x ?? 0,
+            y: vs.gaze.y ?? 0,
+          });
+        }
+      }
+    } catch (err) {
+      setJsonError((err as Error).message);
+    }
+  };
 
   const clock = useClock();
   const { isMobile } = useWindowWidth();
@@ -141,6 +207,55 @@ export default function Demo() {
           <PanelCorners />
           <PanelHeader>Control Panel</PanelHeader>
 
+          {/* JSON Command */}
+          <div style={{ marginBottom: spacing.xl }}>
+            <label style={sectionLabelStyle}>▸ JSON Command</label>
+            <textarea
+              value={jsonInput}
+              onChange={(e) => setJsonInput(e.target.value)}
+              rows={14}
+              style={{
+                width: "100%",
+                padding: `${spacing.sm}px ${spacing.md}px`,
+                border: `1px solid ${jsonError ? "#ff6b6b" : colors.border}`,
+                background: "rgba(8,16,32,0.9)",
+                color: colors.hi,
+                fontSize: fontSizes.xs,
+                fontFamily: "monospace",
+                resize: "vertical",
+                outline: "none",
+                boxSizing: "border-box",
+              }}
+            />
+            {jsonError && (
+              <div style={{ color: "#ff6b6b", fontSize: fontSizes.xs, marginTop: spacing.xs }}>
+                ⚠ {jsonError}
+              </div>
+            )}
+            <button
+              onClick={() => applyJson(jsonInput)}
+              style={{
+                marginTop: spacing.sm,
+                padding: `${spacing.sm}px ${spacing.lg}px`,
+                background: "rgba(120,160,200,0.06)",
+                color: colors.hi,
+                border: `1px solid ${colors.border}`,
+                cursor: "pointer",
+                fontWeight: 400,
+                textTransform: "uppercase",
+                fontFamily: "inherit",
+                fontSize: fontSizes.xs,
+                letterSpacing: "0.1em",
+                transition: "all 0.2s",
+                width: "100%",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(120,160,200,0.14)"; e.currentTarget.style.borderColor = colors.borderHi; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(120,160,200,0.06)"; e.currentTarget.style.borderColor = colors.border; }}
+            >
+              Apply JSON
+            </button>
+          </div>
+
           {/* Presets */}
           <div style={{ marginBottom: spacing.xl }}>
             <label style={sectionLabelStyle}>▸ Presets</label>
@@ -162,7 +277,7 @@ export default function Demo() {
             <label style={sectionLabelStyle}>▸ Mood <span style={{ color: colors.mid }}>{mood}</span></label>
             <select value={mood} onChange={(e) => setMood(e.target.value as AvatarMood)}
               style={{ width: "100%", padding: `${spacing.sm}px ${spacing.md}px`, border: `1px solid ${colors.border}`, background: "rgba(8,16,32,0.9)", color: colors.hi, fontSize: fontSizes.sm, fontFamily: "inherit", cursor: "pointer", outline: "none" }}>
-              {(["idle", "happy", "surprised", "sleepy", "excited", "suspicious", "angry", "sad"] as AvatarMood[]).map((m) => (
+              {(["idle", "happy", "surprised", "sleepy", "excited", "suspicious", "angry", "sad", "thinking"] as AvatarMood[]).map((m) => (
                 <option key={m} value={m} style={{ background: colors.bg }}>{m.toUpperCase()}</option>
               ))}
             </select>
