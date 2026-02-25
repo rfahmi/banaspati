@@ -9,6 +9,9 @@ import {
   HudPage,
   PanelCorners,
   PanelHeader,
+  HudTextField,
+  HudToggle,
+  HudTrackpad,
   useClock,
   useWindowWidth,
 } from "@rfahmi/rfui";
@@ -24,6 +27,11 @@ export default function Demo() {
   const [flameUpwardBias, setFlameUpwardBias] = useState(0.85);
   const [flameSpread, setFlameSpread] = useState(2.2);
   const [clickCount, setClickCount] = useState(0);
+  const [speech, setSpeech] = useState("");
+  const [speechKey, setSpeechKey] = useState(0);
+  const [speechInput, setSpeechInput] = useState("");
+  const [followCursor, setFollowCursor] = useState(true);
+  const [lookAt, setLookAt] = useState({ x: 0, y: 0 });
 
   const clock = useClock();
   const { isMobile } = useWindowWidth();
@@ -84,6 +92,10 @@ export default function Demo() {
               flameAmplitude={flameAmplitude} flameIntensity={flameIntensity}
               flameDrift={flameDrift} flameNoiseScale={flameNoiseScale}
               flameUpwardBias={flameUpwardBias} flameSpread={flameSpread}
+              speech={speech || undefined}
+              speechKey={speechKey}
+              followCursor={followCursor}
+              lookAt={followCursor ? undefined : lookAt}
               onClick={() => {
                 setClickCount((c) => c + 1);
                 setMood("excited");
@@ -104,6 +116,22 @@ export default function Demo() {
                 <span style={{ color: colors.hi, fontWeight: 400 }}>{val}</span>
               </div>
             ))}
+          </div>
+          {/* Speech input */}
+          <div style={{ marginTop: spacing.lg, paddingTop: spacing.lg, borderTop: `1px solid ${colors.border}` }}>
+            <HudTextField
+              label="Speech"
+              value={speechInput}
+              onChange={setSpeechInput}
+              placeholder="Type something…"
+              submitLabel="SAY"
+              onSubmit={() => {
+                if (speechInput.trim()) {
+                  setSpeech(speechInput.trim());
+                  setSpeechKey((k) => k + 1);
+                }
+              }}
+            />
           </div>
           <p style={{ textAlign: "center", margin: `${spacing.lg}px 0 0`, fontSize: fontSizes.xs, color: colors.dim, letterSpacing: "0.15em" }}>▸ CLICK ENTITY TO INTERACT</p>
         </div>
@@ -139,7 +167,23 @@ export default function Demo() {
               ))}
             </select>
           </div>
-
+          {/* Gaze Control */}
+          <div style={{ marginBottom: spacing.xl }}>
+            <label style={sectionLabelStyle}>▸ Gaze Control</label>
+            <HudToggle
+              value={followCursor}
+              onChange={setFollowCursor}
+              label="FOLLOW CURSOR"
+              offLabel="MANUAL"
+              style={{ marginBottom: spacing.md }}
+            />
+            {!followCursor && (
+              <HudTrackpad
+                value={lookAt}
+                onChange={setLookAt}
+              />
+            )}
+          </div>
           {/* Sliders */}
           <div style={{ display: "flex", flexDirection: "column", gap: spacing.lg }}>
             {sliders.map((s) => {

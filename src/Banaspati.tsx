@@ -17,7 +17,8 @@
 
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
+import { SpeechBubble } from "@rfahmi/rfui";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Internal: Perlin noise engine (used by the flame canvas loop)
@@ -151,6 +152,23 @@ export interface BanaspatiProps {
    */
   flameSpread?: number;
 
+  // ── Gaze control ──────────────────────────────────────────────────────────
+
+  /**
+   * Whether the eyes automatically track the mouse cursor.
+   * Set to `false` to disable cursor tracking (eyes stay centred or follow `lookAt`).
+   * @default true
+   */
+  followCursor?: boolean;
+
+  /**
+   * Manually set the gaze direction when `followCursor` is `false`.
+   * Both axes are normalised: -1 (full left / up) to 1 (full right / down).
+   * `{ x: 0, y: 0 }` = looking straight ahead.
+   * Ignored when `followCursor` is `true`.
+   */
+  lookAt?: { x: number; y: number };
+
   // ── Events ────────────────────────────────────────────────────────────────
 
   /**
@@ -158,6 +176,22 @@ export interface BanaspatiProps {
    * The bounce animation always plays; use this for additional side-effects.
    */
   onClick?: () => void;
+
+  // ── Speech ──────────────────────────────────────────────────────────────
+
+  /**
+   * Text to display in a speech bubble above the avatar.
+   * Each time a new non-empty string is set, the bubble appears and
+   * auto-hides after 5 seconds.
+   */
+  speech?: string;
+
+  /**
+   * Change this value to re-trigger the speech bubble even if the text
+   * is the same as before (e.g. increment a counter).
+   * @default undefined
+   */
+  speechKey?: string | number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -209,8 +243,39 @@ export default function Banaspati({
   flameNoiseScale = 1.5,
   flameUpwardBias = 0.85,
   flameSpread    = 2.2,
+  followCursor   = true,
+  lookAt,
   onClick,
+  speech,
+  speechKey,
 }: BanaspatiProps) {
+  // ── Speech bubble state ────────────────────────────────────────────────────
+  const [bubbleText, setBubbleText]       = useState<string | undefined>();
+  const [bubbleVisible, setBubbleVisible] = useState(false);
+  const speechTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const speechClearRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    if (speech && speech.length > 0) {
+      clearTimeout(speechClearRef.current);
+      setBubbleText(speech);
+      setBubbleVisible(true);
+      clearTimeout(speechTimerRef.current);
+      speechTimerRef.current = setTimeout(() => {
+        setBubbleVisible(false);
+        // Remove element after fade-out animation completes
+        speechClearRef.current = setTimeout(() => setBubbleText(undefined), 250);
+      }, 5000);
+    } else {
+      setBubbleVisible(false);
+      speechClearRef.current = setTimeout(() => setBubbleText(undefined), 250);
+    }
+    return () => {
+      clearTimeout(speechTimerRef.current);
+      clearTimeout(speechClearRef.current);
+    };
+  }, [speech, speechKey]);
+
   // ── DOM refs ───────────────────────────────────────────────────────────────
   const wrapperRef      = useRef<HTMLDivElement>(null);
   const ballRef         = useRef<HTMLDivElement>(null);
@@ -339,8 +404,29 @@ export default function Banaspati({
     return () => clearTimeout(blinkTimerRef.current);
   }, [triggerBlink]);
 
+  // ── Live refs for gaze control ──────────────────────────────────────────────
+  const followCursorRef = useRef(followCursor);
+  const lookAtRef       = useRef(lookAt);
+
+  useEffect(() => { followCursorRef.current = followCursor; }, [followCursor]);
+  useEffect(() => {
+    lookAtRef.current = lookAt;
+    // When manually controlling, immediately update target eye
+    if (!followCursorRef.current && lookAt) {
+      targetEye.current = { x: lookAt.x * 28, y: lookAt.y * 22 };
+    }
+  }, [lookAt?.x, lookAt?.y]);
+
+  // Reset gaze to centre when followCursor is toggled off without a lookAt
+  useEffect(() => {
+    if (!followCursor && !lookAt) {
+      targetEye.current = { x: 0, y: 0 };
+    }
+  }, [followCursor, lookAt]);
+
   // ── Mouse tracking ─────────────────────────────────────────────────────────
   const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!followCursorRef.current) return;
     if (!ballRef.current) return;
     const rect = ballRef.current.getBoundingClientRect();
     const cx = rect.left + rect.width  / 2;
@@ -618,6 +704,17 @@ export default function Banaspati({
         height: `${BALL_SIZE + BOUNCE_HEIGHT + 80}px`,
         userSelect: "none",
       }}>
+        {/* Speech bubble — appears above the avatar */}
+        {bubbleText && (
+          <div key={`${bubbleText}-${speechKey}`}>
+            <SpeechBubble
+              visible={bubbleVisible}
+              style={{ bottom: `${BALL_SIZE + BOUNCE_HEIGHT + 16}px` }}
+            >
+              {bubbleText}
+            </SpeechBubble>
+          </div>
+        )}
         {/* Ground shadow — size & opacity driven by physics loop */}
         <div
           ref={shadowRef}
