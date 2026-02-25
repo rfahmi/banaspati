@@ -198,6 +198,33 @@ export default function Demo() {
                 }
               }}
             />
+            <button
+              onClick={() => {
+                setSpeechInput("");
+                setSpeech("");
+                setSpeechKey((k) => k + 1);
+                applyPreset("default");
+              }}
+              style={{
+                marginTop: spacing.sm,
+                padding: `${spacing.sm}px ${spacing.lg}px`,
+                background: "rgba(120,160,200,0.06)",
+                color: colors.hi,
+                border: `1px solid ${colors.border}`,
+                cursor: "pointer",
+                fontWeight: 400,
+                textTransform: "uppercase",
+                fontFamily: "inherit",
+                fontSize: fontSizes.xs,
+                letterSpacing: "0.1em",
+                transition: "all 0.2s",
+                width: "100%",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(120,160,200,0.14)"; e.currentTarget.style.borderColor = colors.borderHi; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(120,160,200,0.06)"; e.currentTarget.style.borderColor = colors.border; }}
+            >
+              Clear
+            </button>
           </div>
           <p style={{ textAlign: "center", margin: `${spacing.lg}px 0 0`, fontSize: fontSizes.xs, color: colors.dim, letterSpacing: "0.15em" }}>▸ CLICK ENTITY TO INTERACT</p>
         </div>

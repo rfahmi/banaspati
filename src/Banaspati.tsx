@@ -519,7 +519,7 @@ export default function Banaspati({
         shadowRef.current.style.opacity   = `${sOp}`;
         shadowRef.current.style.filter    = `blur(${sB}px)`;
         shadowRef.current.style.transform =
-          `translateX(-50%) translateY(${-p.y + BALL_SIZE / 2 + 18}px)`;
+          `translateX(-50%) translateY(${-p.y}px)`;
       }
 
       // Eye container position
@@ -725,14 +725,14 @@ export default function Banaspati({
       <div style={{
         position: "relative",
         width:  `${BALL_SIZE + 100}px`,
-        height: `${BALL_SIZE + BOUNCE_HEIGHT + 80}px`,
+        height: `${BALL_SIZE + BOUNCE_HEIGHT + 10}px`,
         userSelect: "none",
       }}>
         {/* Ground shadow — size & opacity driven by physics loop */}
         <div
           ref={shadowRef}
           style={{
-            position: "absolute", bottom: "0px", left: "50%",
+            position: "absolute", bottom: `${10}px`, left: "50%",
             width: "60px", height: "10px",
             background: "radial-gradient(ellipse, rgba(0,220,180,1) 0%, rgba(0,180,140,0.4) 50%, transparent 80%)",
             borderRadius: "50%",
@@ -746,7 +746,7 @@ export default function Banaspati({
           ref={wrapperRef}
           style={{
             position: "absolute",
-            bottom: `${BALL_SIZE / 2}px`,
+            bottom: `${10}px`,
             left: "50%",
             marginLeft: `-${BALL_SIZE / 2}px`,
             width:  `${BALL_SIZE}px`,
@@ -825,33 +825,16 @@ export default function Banaspati({
           style={{
             zIndex: 10,
             pointerEvents: "none",
+            marginTop: "16px",
             animation: bubbleVisible
               ? "ba-bubbleIn 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards"
               : "ba-bubbleOut 0.22s ease-in forwards",
           }}
         >
-          {/* Upward-pointing tail (border outline) */}
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: -1 }}>
-            <div style={{
-              width: 0, height: 0,
-              borderLeft: "7px solid transparent",
-              borderRight: "7px solid transparent",
-              borderBottom: "7px solid rgba(160,190,220,0.35)",
-            }} />
-          </div>
-          {/* Upward-pointing tail (fill) */}
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: -8, position: "relative", zIndex: 1 }}>
-            <div style={{
-              width: 0, height: 0,
-              borderLeft: "6px solid transparent",
-              borderRight: "6px solid transparent",
-              borderBottom: "6px solid rgba(12, 22, 42, 0.92)",
-            }} />
-          </div>
-          {/* Bubble body */}
+          {/* Bubble body with integrated tail */}
           <div style={{
             position: "relative",
-            background: "rgba(12, 22, 42, 0.75)",
+            background: "rgba(12, 22, 42, 0.92)",
             borderTop: "1px solid rgba(160,190,220,0.35)",
             borderRight: "1px solid rgba(160,190,220,0.35)",
             borderBottom: "1px solid rgba(160,190,220,0.35)",
@@ -870,6 +853,28 @@ export default function Banaspati({
             wordBreak: "break-word",
             whiteSpace: "pre-wrap",
           }}>
+            {/* Upward-pointing tail (border) — absolutely positioned on top */}
+            <div style={{
+              position: "absolute",
+              top: -7,
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: 0, height: 0,
+              borderLeft: "7px solid transparent",
+              borderRight: "7px solid transparent",
+              borderBottom: "7px solid rgba(160,190,220,0.35)",
+            }} />
+            {/* Upward-pointing tail (fill) */}
+            <div style={{
+              position: "absolute",
+              top: -5,
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: 0, height: 0,
+              borderLeft: "6px solid transparent",
+              borderRight: "6px solid transparent",
+              borderBottom: "6px solid rgba(12, 22, 42, 0.92)",
+            }} />
             {bubbleText}
           </div>
         </div>
