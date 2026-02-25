@@ -65,7 +65,7 @@ export default function Demo() {
         </div>
         <div style={{ textAlign: isMobile ? "left" : "right" }}>
           <div style={{ fontSize: isMobile ? fontSizes.base : fontSizes.lg, color: colors.hi, fontWeight: 400, fontVariantNumeric: "tabular-nums" }}>{clock}</div>
-          <div style={{ fontSize: fontSizes.xs, color: colors.dim, marginTop: spacing.xs, letterSpacing: "0.15em" }}>SYS:ONLINE \u25cf LINK:ACTIVE</div>
+          <div style={{ fontSize: fontSizes.xs, color: colors.dim, marginTop: spacing.xs, letterSpacing: "0.15em" }}>SYS:ONLINE ● LINK:ACTIVE</div>
         </div>
       </header>
 
@@ -104,7 +104,7 @@ export default function Demo() {
               </div>
             ))}
           </div>
-          <p style={{ textAlign: "center", margin: `${spacing.lg}px 0 0`, fontSize: fontSizes.xs, color: colors.dim, letterSpacing: "0.15em" }}>\u25b8 CLICK ENTITY TO INTERACT</p>
+          <p style={{ textAlign: "center", margin: `${spacing.lg}px 0 0`, fontSize: fontSizes.xs, color: colors.dim, letterSpacing: "0.15em" }}>▸ CLICK ENTITY TO INTERACT</p>
         </div>
 
         {/* Control Panel */}
@@ -114,7 +114,7 @@ export default function Demo() {
 
           {/* Presets */}
           <div style={{ marginBottom: spacing.xl }}>
-            <label style={sectionLabelStyle}>\u25b8 Presets</label>
+            <label style={sectionLabelStyle}>▸ Presets</label>
             <div style={{ display: "flex", gap: spacing.sm, flexWrap: "wrap" }}>
               {Object.keys(presets).map((name) => (
                 <button
@@ -130,7 +130,7 @@ export default function Demo() {
 
           {/* Mood */}
           <div style={{ marginBottom: spacing.xl }}>
-            <label style={sectionLabelStyle}>\u25b8 Mood\u2002<span style={{ color: colors.mid }}>{mood}</span></label>
+            <label style={sectionLabelStyle}>▸ Mood <span style={{ color: colors.mid }}>{mood}</span></label>
             <select value={mood} onChange={(e) => setMood(e.target.value as AvatarMood)}
               style={{ width: "100%", padding: `${spacing.sm}px ${spacing.md}px`, border: `1px solid ${colors.border}`, background: "rgba(8,16,32,0.9)", color: colors.hi, fontSize: fontSizes.sm, fontFamily: "inherit", cursor: "pointer", outline: "none" }}>
               {(["idle", "happy", "surprised", "sleepy", "excited", "suspicious"] as AvatarMood[]).map((m) => (
@@ -157,7 +157,7 @@ export default function Demo() {
                   </div>
                   <div style={{ marginTop: 3, fontSize: fontSizes.xs, lineHeight: 1, userSelect: "none" }}>
                     {Array.from({ length: 20 }, (_, i) => (
-                      <span key={i} style={{ color: (i / 20) * 100 < pct ? colors.dim : "rgba(120,160,200,0.1)", transition: "color 0.15s" }}>\u25ae</span>
+                      <span key={i} style={{ color: (i / 20) * 100 < pct ? colors.dim : "rgba(120,160,200,0.1)", transition: "color 0.15s" }}>▮</span>
                     ))}
                   </div>
                 </div>
@@ -169,7 +169,7 @@ export default function Demo() {
 
       {/* Footer */}
       <footer style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", gap: isMobile ? spacing.sm : 0, marginTop: spacing.xxl, paddingTop: spacing.lg, borderTop: `1px solid ${colors.border}`, fontSize: fontSizes.xs, color: colors.dim, letterSpacing: "0.12em" }}>
-        <span>\u25c6 BANASPATI SYSTEM ONLINE</span>
+        <span>◆ BANASPATI SYSTEM ONLINE</span>
         <div style={{ display: "flex", gap: spacing.lg }}>
           <a href="https://github.com/rfahmi/banaspati" style={{ color: colors.mid, textDecoration: "none" }}>GITHUB</a>
           <a href="https://www.npmjs.com/package/@rfahmi/banaspati" style={{ color: colors.mid, textDecoration: "none" }}>NPM</a>
