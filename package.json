@@ -22,6 +22,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "demo": "vite example",
+    "build:demo": "vite build --config vite.pages.config.ts",
     "prepublishOnly": "npm run build",
     "lint": "eslint src --ext .ts,.tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx}\""
@@ -49,7 +50,7 @@
   "bugs": {
     "url": "https://github.com/rfahmi/banaspati/issues"
   },
-  "homepage": "https://github.com/rfahmi/banaspati#readme",
+  "homepage": "https://rfahmi.github.io/banaspati",
   "peerDependencies": {
     "react": "^17.0.0 || ^18.0.0 || ^19.0.0"
   },

@@ -5,8 +5,9 @@
 **A self-contained animated teal blob avatar with physics-based interactions and Perlin-noise flame rendering.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Demo](https://img.shields.io/badge/demo-live-blue)](https://rfahmi.github.io/banaspati)
 
-[Installation](#installation) • [Usage](#usage) • [API](#api) • [Examples](#examples)
+[**Live Demo**](https://rfahmi.github.io/banaspati) • [Installation](#installation) • [Usage](#usage) • [API](#api) • [Examples](#examples)
 
 </div>
 
