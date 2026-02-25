@@ -1,0 +1,76 @@
+{
+  "name": "com.rfahmi.banaspati",
+  "version": "1.0.0",
+  "description": "A self-contained animated teal blob avatar with physics-based bounce, Perlin-noise flame rendering, mouse-tracked eye movement, and customizable mood expressions. Zero external dependencies — only React.",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "demo": "vite example",
+    "prepublishOnly": "npm run build",
+    "lint": "eslint src --ext .ts,.tsx",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\""
+  },
+  "keywords": [
+    "react",
+    "avatar",
+    "animation",
+    "perlin-noise",
+    "flame",
+    "physics",
+    "blob",
+    "component",
+    "ui",
+    "interactive",
+    "canvas",
+    "typescript"
+  ],
+  "author": "Nur Fahmi",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nurfahmi/banaspati"
+  },
+  "bugs": {
+    "url": "https://github.com/nurfahmi/banaspati/issues"
+  },
+  "homepage": "https://github.com/nurfahmi/banaspati#readme",
+  "peerDependencies": {
+    "react": "^17.0.0 || ^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vite": "^5.0.0"
+  },
+  "tsup": {
+    "entry": ["src/index.ts"],
+    "format": ["cjs", "esm"],
+    "dts": true,
+    "splitting": false,
+    "sourcemap": true,
+    "clean": true,
+    "minify": true,
+    "external": ["react"]
+  }
+}

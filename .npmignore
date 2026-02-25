@@ -1,0 +1,33 @@
+# Source files
+src
+example
+
+# Config files
+tsconfig.json
+.prettierrc
+.eslintrc*
+vite.config.ts
+
+# Development files
+.github
+.vscode
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# Documentation
+CONTRIBUTING.md
+.editorconfig
+
+# CI/CD
+.travis.yml
+.circleci
+.gitlab-ci.yml
+
+# Other
+node_modules
+*.log
+.DS_Store
+coverage
+.nyc_output
