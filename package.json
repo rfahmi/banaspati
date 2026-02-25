@@ -44,12 +44,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nurfahmi/banaspati"
+    "url": "https://github.com/rfahmi/banaspati"
   },
   "bugs": {
-    "url": "https://github.com/nurfahmi/banaspati/issues"
+    "url": "https://github.com/rfahmi/banaspati/issues"
   },
-  "homepage": "https://github.com/nurfahmi/banaspati#readme",
+  "homepage": "https://github.com/rfahmi/banaspati#readme",
   "peerDependencies": {
     "react": "^17.0.0 || ^18.0.0 || ^19.0.0"
   },
