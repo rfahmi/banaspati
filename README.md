@@ -18,6 +18,8 @@
 - 🎨 **Perlin-noise flame rendering** — Organic, ever-changing flame effect rendered on canvas
 - ⚡ **Physics-based bounce & squash** — Click to trigger satisfying bounce animations
 - 👀 **Mouse-tracked eye movement** — Eyes follow your cursor with smooth interpolation
+- 🎯 **Gaze control** — Disable cursor following and manually steer head/eye direction
+- 💬 **Speech bubble** — Display text in an animated HUD-themed speech bubble
 - 😊 **Eight mood expressions** — `idle`, `happy`, `surprised`, `sleepy`, `excited`, `suspicious`, `angry`, `sad`
 - 🎛️ **Highly customizable** — Control flame intensity, amplitude, drift, and more
 - 🪶 **Zero dependencies** — Only requires React (no external animation libraries)
@@ -156,6 +158,10 @@ function InteractiveAvatar() {
 | `flameNoiseScale` | `number` | `1.5` | Frequency of Perlin noise (0.3–3). Low = smooth waves, high = turbulent detail. |
 | `flameUpwardBias` | `number` | `0.85` | How much side flames redirect upward (0–1.5). `0` = pure outward, `1.5` = strongly upward. |
 | `flameSpread` | `number` | `2.2` | Flame taper sharpness (0.5–4). Low = wide flame, high = narrow pointed tip. |
+| `speech` | `string` | `undefined` | Text to display in a speech bubble above the avatar. Bubble auto-hides after 5 seconds. |
+| `speechKey` | `string \| number` | `undefined` | Change this value to re-trigger the speech bubble, even with the same text. |
+| `followCursor` | `boolean` | `true` | When `true`, eyes follow the mouse cursor. Set to `false` for manual gaze control via `lookAt`. |
+| `lookAt` | `{ x: number; y: number }` | `undefined` | Manually control gaze direction when `followCursor` is `false`. Both axes range from `-1` (left/up) to `1` (right/down). |
 | `onClick` | `() => void` | `undefined` | Callback fired when the avatar is clicked. |
 
 ### `AvatarMood`
@@ -235,6 +241,50 @@ type AvatarMood = "idle" | "happy" | "surprised" | "sleepy" | "excited" | "suspi
   flameDrift={0.4}
   flameSpread={3.0}
 />
+```
+
+### Speech Bubble
+
+```tsx
+import { useState } from "react";
+import Banaspati from "@rfahmi/banaspati";
+
+function TalkingAvatar() {
+  const [speech, setSpeech] = useState("");
+  const [speechKey, setSpeechKey] = useState(0);
+
+  const say = (text: string) => {
+    setSpeech(text);
+    setSpeechKey((k) => k + 1);
+  };
+
+  return (
+    <div>
+      <Banaspati speech={speech} speechKey={speechKey} />
+      <button onClick={() => say("Hello!")}>Say Hello</button>
+    </div>
+  );
+}
+```
+
+### Manual Gaze Control
+
+```tsx
+import { useState } from "react";
+import Banaspati from "@rfahmi/banaspati";
+
+function GazeControlledAvatar() {
+  const [lookAt, setLookAt] = useState({ x: 0, y: 0 });
+
+  return (
+    <div>
+      <Banaspati followCursor={false} lookAt={lookAt} />
+      <button onClick={() => setLookAt({ x: -1, y: 0 })}>Look Left</button>
+      <button onClick={() => setLookAt({ x: 1, y: 0 })}>Look Right</button>
+      <button onClick={() => setLookAt({ x: 0, y: 0 })}>Center</button>
+    </div>
+  );
+}
 ```
 
 ---
