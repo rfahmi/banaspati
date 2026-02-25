@@ -43,6 +43,12 @@ or using pnpm:
 pnpm add @rfahmi/banaspati
 ```
 
+or directly from GitHub:
+
+```bash
+npm install github:rfahmi/banaspati
+```
+
 ---
 
 ## 🚀 Usage
