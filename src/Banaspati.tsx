@@ -17,7 +17,7 @@
 
 "use client";
 
-import React, { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback } from "react";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Internal: Perlin noise engine (used by the flame canvas loop)
