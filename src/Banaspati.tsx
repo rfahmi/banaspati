@@ -178,12 +178,12 @@ const FLAME_OFFSET  = (FLAME_CANVAS - BALL_SIZE) / 2;
 type EyeClip = { topL: number; topR: number; bot: number; radius: string; w: number; h: number };
 const EYE_STATES: Record<AvatarMood, EyeClip> = {
   idle:       { topL: 0,  topR: 0,  bot: 0,  radius: "10px", w: 18, h: 30 },
-  happy:      { topL: 0,  topR: 0,  bot: 48, radius: "10px", w: 18, h: 30 },
-  surprised:  { topL: 0,  topR: 0,  bot: 0,  radius: "50%",  w: 26, h: 38 },
-  sleepy:     { topL: 50, topR: 50, bot: 0,  radius: "10px", w: 18, h: 30 },
-  excited:    { topL: 0,  topR: 0,  bot: 10, radius: "8px",  w: 18, h: 30 },
-  suspicious: { topL: 35, topR: 48, bot: 0,  radius: "10px", w: 18, h: 30 },
-  angry:      { topL: 42, topR: 42, bot: 15, radius: "6px",  w: 18, h: 30 },
+  happy:      { topL: 0,  topR: 0,  bot: 50, radius: "10px", w: 20, h: 30 },
+  surprised:  { topL: 0,  topR: 0,  bot: 0,  radius: "50%",  w: 28, h: 40 },
+  sleepy:     { topL: 58, topR: 58, bot: 0,  radius: "10px", w: 22, h: 26 },
+  excited:    { topL: 0,  topR: 0,  bot: 35, radius: "50%",  w: 22, h: 34 },
+  suspicious: { topL: 0,  topR: 0,  bot: 0,  radius: "10px", w: 18, h: 30 },
+  angry:      { topL: 0,  topR: 0,  bot: 0,  radius: "6px",  w: 18, h: 30 },
   sad:        { topL: 0,  topR: 0,  bot: 0,  radius: "10px", w: 18, h: 30 },
 };
 
@@ -268,13 +268,13 @@ export default function Banaspati({
       if (el) { el.style.width = `${s.w}px`; el.style.height = `${s.h}px`; }
     });
     if (m === "angry") {
-      // Tilted polygon clips — inner edges slope downward to form a V-brow
+      // V-brow — inner edges slope downward
       if (eyeLeftRef.current) {
-        eyeLeftRef.current.style.clipPath     = "polygon(0% 28%, 100% 52%, 100% 88%, 0% 88%)";
+        eyeLeftRef.current.style.clipPath     = "polygon(0% 28%, 100% 52%, 100% 85%, 0% 85%)";
         eyeLeftRef.current.style.borderRadius = s.radius;
       }
       if (eyeRightRef.current) {
-        eyeRightRef.current.style.clipPath     = "polygon(0% 52%, 100% 28%, 100% 88%, 0% 88%)";
+        eyeRightRef.current.style.clipPath     = "polygon(0% 52%, 100% 28%, 100% 85%, 0% 85%)";
         eyeRightRef.current.style.borderRadius = s.radius;
       }
     } else if (m === "sad") {
@@ -285,6 +285,20 @@ export default function Banaspati({
       }
       if (eyeRightRef.current) {
         eyeRightRef.current.style.clipPath     = "polygon(0% 24%, 100% 48%, 100% 100%, 0% 100%)";
+        eyeRightRef.current.style.borderRadius = s.radius;
+      }
+    } else if (m === "suspicious") {
+      // The Rock eyebrow raise — one eye wide open, the other squinting hard
+      if (eyeLeftRef.current) {
+        eyeLeftRef.current.style.width       = "24px";
+        eyeLeftRef.current.style.height      = "36px";
+        eyeLeftRef.current.style.clipPath    = `inset(0% 0% 0% 0%)`;
+        eyeLeftRef.current.style.borderRadius = "50%";
+      }
+      if (eyeRightRef.current) {
+        eyeRightRef.current.style.width       = "18px";
+        eyeRightRef.current.style.height      = "28px";
+        eyeRightRef.current.style.clipPath    = `inset(58% 0% 0% 0%)`;
         eyeRightRef.current.style.borderRadius = s.radius;
       }
     } else {
