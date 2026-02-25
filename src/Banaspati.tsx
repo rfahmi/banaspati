@@ -386,10 +386,21 @@ export default function Banaspati({
       if (eyeContainerRef.current)
         eyeContainerRef.current.style.transform = `translate(${ex.x}px, ${ex.y}px)`;
 
+      // 3D perspective foreshortening — eyes sit on the sphere surface,
+      // so the eye turning away from the viewer compresses horizontally.
+      const eyeHalfGap = 16;                    // half of the 32 px CSS gap
+      const perspR     = (BALL_SIZE / 2) * 0.85; // tighter radius → more visible effect
+      const leftNorm   = (ex.x - eyeHalfGap) / perspR;
+      const rightNorm  = (ex.x + eyeHalfGap) / perspR;
+      const leftSX     = Math.sqrt(Math.max(0.01, 1 - leftNorm  * leftNorm));
+      const rightSX    = Math.sqrt(Math.max(0.01, 1 - rightNorm * rightNorm));
+
       // Blink scale
       const blinkSY = blinkingRef.current ? 0.06 : 1;
-      if (eyeLeftRef.current)  eyeLeftRef.current.style.transform  = `scaleY(${blinkSY})`;
-      if (eyeRightRef.current) eyeRightRef.current.style.transform = `scaleY(${blinkSY})`;
+      if (eyeLeftRef.current)
+        eyeLeftRef.current.style.transform  = `scaleX(${leftSX.toFixed(3)}) scaleY(${blinkSY})`;
+      if (eyeRightRef.current)
+        eyeRightRef.current.style.transform = `scaleX(${rightSX.toFixed(3)}) scaleY(${blinkSY})`;
 
       frameRef.current = requestAnimationFrame(tick);
     };
@@ -639,7 +650,7 @@ export default function Banaspati({
             <div
               ref={eyeContainerRef}
               style={{
-                display: "flex", gap: "20px", marginTop: "-12px",
+                display: "flex", gap: "32px", marginTop: "-12px",
                 position: "relative", zIndex: 2,
                 willChange: "transform",
               }}
