@@ -4,10 +4,9 @@
 
 **A self-contained animated teal blob avatar with physics-based interactions and Perlin-noise flame rendering.**
 
-[![NPM Version](https://img.shields.io/npm/v/com.rfahmi.banaspati.svg)](https://www.npmjs.com/package/com.rfahmi.banaspati)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[Demo](#demo) • [Installation](#installation) • [Usage](#usage) • [API](#api) • [Examples](#examples)
+[Installation](#installation) • [Usage](#usage) • [API](#api) • [Examples](#examples)
 
 </div>
 
@@ -257,7 +256,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📄 License
 
-MIT © [Nur Fahmi](https://github.com/nurfahmi)
+MIT © [Nur Fahmi](https://github.com/rfahmi)
 
 ---
 
@@ -271,8 +270,8 @@ MIT © [Nur Fahmi](https://github.com/nurfahmi)
 
 ## 📬 Contact
 
-- GitHub: [@nurfahmi](https://github.com/nurfahmi)
-- Issues: [Report a bug](https://github.com/nurfahmi/banaspati/issues)
+- GitHub: [@rfahmi](https://github.com/rfahmi)
+- Issues: [Report a bug](https://github.com/rfahmi/banaspati/issues)
 
 ---
 
