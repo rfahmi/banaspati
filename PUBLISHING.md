@@ -82,10 +82,10 @@ npm publish
 Check that your package is live:
 
 ```bash
-npm view com.rfahmi.banaspati
+npm view @rfahmi/banaspati
 ```
 
-Or visit: https://www.npmjs.com/package/com.rfahmi.banaspati
+Or visit: https://www.npmjs.com/package/@rfahmi/banaspati
 
 ## Post-publish
 
@@ -103,7 +103,7 @@ Or visit: https://www.npmjs.com/package/com.rfahmi.banaspati
 
 ### "Package name already exists"
 
-The package name `com.rfahmi.banaspati` must be unique on npm. If it's taken, you'll need to:
+The package name `@rfahmi/banaspati` must be unique on npm. If it's taken, you'll need to:
 - Choose a different name
 - Or use a scoped package: `@username/banaspati`
 

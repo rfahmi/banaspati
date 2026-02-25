@@ -10,7 +10,7 @@
  * Zero external dependencies — only React + a browser canvas.
  *
  * Usage:
- *   import Banaspati from "com.rfahmi.banaspati";
+ *   import Banaspati from "@rfahmi/banaspati";
  *
  *   <Banaspati mood="happy" flameAmplitude={50} sphereScale={1} />
  */

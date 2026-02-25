@@ -245,7 +245,7 @@ export default function Demo() {
           <p>
             Built with ❤️ | <a href="https://github.com/rfahmi/banaspati" style={{ color: "#00d9b3" }}>GitHub</a>
             {" | "}
-            <a href="https://www.npmjs.com/package/com.rfahmi.banaspati" style={{ color: "#00d9b3" }}>NPM</a>
+            <a href="https://www.npmjs.com/package/@rfahmi/banaspati" style={{ color: "#00d9b3" }}>NPM</a>
           </p>
         </footer>
       </div>

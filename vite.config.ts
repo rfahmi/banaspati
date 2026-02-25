@@ -6,7 +6,7 @@ export default defineConfig({
   root: "example",
   resolve: {
     alias: {
-      "com.rfahmi.banaspati": "/src/index.ts",
+      "@rfahmi/banaspati": "/src/index.ts",
     },
   },
 });

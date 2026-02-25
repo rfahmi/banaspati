@@ -1,5 +1,5 @@
 {
-  "name": "com.rfahmi.banaspati",
+  "name": "@rfahmi/banaspati",
   "version": "1.0.0",
   "description": "A self-contained animated teal blob avatar with physics-based bounce, Perlin-noise flame rendering, mouse-tracked eye movement, and customizable mood expressions. Zero external dependencies — only React.",
   "main": "dist/index.js",

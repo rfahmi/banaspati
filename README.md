@@ -28,19 +28,19 @@
 ## 📦 Installation
 
 ```bash
-npm install com.rfahmi.banaspati
+npm install @rfahmi/banaspati
 ```
 
 or using yarn:
 
 ```bash
-yarn add com.rfahmi.banaspati
+yarn add @rfahmi/banaspati
 ```
 
 or using pnpm:
 
 ```bash
-pnpm add com.rfahmi.banaspati
+pnpm add @rfahmi/banaspati
 ```
 
 ---
@@ -50,7 +50,7 @@ pnpm add com.rfahmi.banaspati
 ### Basic Usage
 
 ```tsx
-import Banaspati from "com.rfahmi.banaspati";
+import Banaspati from "@rfahmi/banaspati";
 
 function App() {
   return (
@@ -64,7 +64,7 @@ function App() {
 ### With Customization
 
 ```tsx
-import Banaspati from "com.rfahmi.banaspati";
+import Banaspati from "@rfahmi/banaspati";
 
 function App() {
   return (
@@ -86,7 +86,7 @@ function App() {
 
 ```tsx
 import { useState } from "react";
-import Banaspati, { type AvatarMood } from "com.rfahmi.banaspati";
+import Banaspati, { type AvatarMood } from "@rfahmi/banaspati";
 
 function InteractiveAvatar() {
   const [mood, setMood] = useState<AvatarMood>("idle");

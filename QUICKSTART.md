@@ -140,13 +140,13 @@ Before publishing, test the package in another project:
 npm link
 
 # In your test project
-npm link com.rfahmi.banaspati
+npm link @rfahmi/banaspati
 ```
 
 Then import and use:
 
 ```tsx
-import Banaspati from 'com.rfahmi.banaspati';
+import Banaspati from '@rfahmi/banaspati';
 
 function App() {
   return <Banaspati mood="happy" />;
