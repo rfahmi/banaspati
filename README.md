@@ -18,7 +18,7 @@
 - 🎨 **Perlin-noise flame rendering** — Organic, ever-changing flame effect rendered on canvas
 - ⚡ **Physics-based bounce & squash** — Click to trigger satisfying bounce animations
 - 👀 **Mouse-tracked eye movement** — Eyes follow your cursor with smooth interpolation
-- 😊 **Six mood expressions** — `idle`, `happy`, `surprised`, `sleepy`, `excited`, `suspicious`
+- 😊 **Eight mood expressions** — `idle`, `happy`, `surprised`, `sleepy`, `excited`, `suspicious`, `angry`, `sad`
 - 🎛️ **Highly customizable** — Control flame intensity, amplitude, drift, and more
 - 🪶 **Zero dependencies** — Only requires React (no external animation libraries)
 - 📦 **TypeScript support** — Fully typed with comprehensive interfaces
@@ -117,6 +117,8 @@ function InteractiveAvatar() {
             <option value="sleepy">Sleepy</option>
             <option value="excited">Excited</option>
             <option value="suspicious">Suspicious</option>
+            <option value="angry">Angry</option>
+            <option value="sad">Sad</option>
           </select>
         </label>
 
@@ -145,7 +147,7 @@ function InteractiveAvatar() {
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `mood` | `AvatarMood` | `"idle"` | Controls the eye expression: `"idle"`, `"happy"`, `"surprised"`, `"sleepy"`, `"excited"`, `"suspicious"` |
+| `mood` | `AvatarMood` | `"idle"` | Controls the eye expression: `"idle"`, `"happy"`, `"surprised"`, `"sleepy"`, `"excited"`, `"suspicious"`, `"angry"`, `"sad"` |
 | `sphereOpacity` | `number` | `1` | Opacity of the sphere body (0–1). Eyes remain fully visible. |
 | `sphereScale` | `number` | `1` | Scale multiplier for the entire avatar. `1` = default size, `2` = double size. |
 | `flameAmplitude` | `number` | `40` | Maximum spike height of flame tips in pixels (0–80). |
@@ -159,7 +161,7 @@ function InteractiveAvatar() {
 ### `AvatarMood`
 
 ```tsx
-type AvatarMood = "idle" | "happy" | "surprised" | "sleepy" | "excited" | "suspicious";
+type AvatarMood = "idle" | "happy" | "surprised" | "sleepy" | "excited" | "suspicious" | "angry" | "sad";
 ```
 
 ---
@@ -208,6 +210,33 @@ type AvatarMood = "idle" | "happy" | "surprised" | "sleepy" | "excited" | "suspi
 />
 ```
 
+### Rage Mode
+
+```tsx
+<Banaspati
+  mood="angry"
+  flameAmplitude={80}
+  flameIntensity={2.0}
+  flameDrift={3.0}
+  flameNoiseScale={2.5}
+  flameUpwardBias={1.4}
+  flameSpread={1.2}
+  sphereScale={1.2}
+/>
+```
+
+### Sad & Subdued
+
+```tsx
+<Banaspati
+  mood="sad"
+  flameAmplitude={20}
+  flameIntensity={0.6}
+  flameDrift={0.4}
+  flameSpread={3.0}
+/>
+```
+
 ---
 
 ## 🎭 Mood Gallery
@@ -220,6 +249,8 @@ type AvatarMood = "idle" | "happy" | "surprised" | "sleepy" | "excited" | "suspi
 | `sleepy` | Top-clipped eyes | Half-closed, drowsy look |
 | `excited` | Slightly bottom-clipped, smaller | Energetic and enthusiastic vibe |
 | `suspicious` | Asymmetric top-clip | Side-eye, skeptical expression |
+| `angry` | Tilted V-brow, narrowed | Furrowed, intense glare |
+| `sad` | Inverted V-brow, drooping outer corners | Puppy-eyes, sorrowful look |
 
 ---
 
@@ -230,7 +261,7 @@ type AvatarMood = "idle" | "happy" | "surprised" | "sleepy" | "excited" | "suspi
 - **Animation Loop**: Uses `requestAnimationFrame` for 60fps rendering
 - **Physics Simulation**: Spring-based squash & bounce with gravity
 - **Flame Rendering**: Multi-layered Perlin noise (FBM) with radial gradients
-- **Eye Tracking**: Smooth linear interpolation toward mouse position
+- **Eye Tracking**: Smooth linear interpolation toward mouse position with 3D sphere-surface foreshortening
 - **State Management**: Ref-based to avoid React re-renders during animation
 
 ### Performance

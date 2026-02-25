@@ -5,7 +5,7 @@
  *   - Physics-based bounce & squash on click
  *   - Perlin-noise flame rendered on a canvas behind the sphere
  *   - Mouse-tracked eye movement + periodic blinking
- *   - Six mood expressions controllable via prop
+ *   - Eight mood expressions controllable via prop
  *
  * Zero external dependencies — only React + a browser canvas.
  *
@@ -70,14 +70,16 @@ function buildPerlin() {
 // Public types
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** The six available mood expressions. Controls eye shape. */
+/** The eight available mood expressions. Controls eye shape. */
 export type AvatarMood =
   | "idle"        // neutral, round eyes
   | "happy"       // bottom-clipped (smile-eyes)
   | "surprised"   // wide open, larger radius
   | "sleepy"      // top-clipped (half-closed)
   | "excited"     // slightly bottom-clipped, smaller radius
-  | "suspicious"; // asymmetric top-clip (side-eye)
+  | "suspicious"  // asymmetric top-clip (side-eye)
+  | "angry"       // furrowed, narrowed eyes (V-brow)
+  | "sad";        // drooping inner brow (inverted V)
 
 export interface BanaspatiProps {
   // ── Mood ──────────────────────────────────────────────────────────────────
@@ -173,14 +175,16 @@ const FLAME_CANVAS  = 320;
 /** How many pixels the flame canvas bleeds outside the sphere wrapper on each side. */
 const FLAME_OFFSET  = (FLAME_CANVAS - BALL_SIZE) / 2;
 
-type EyeClip = { topL: number; topR: number; bot: number; radius: string };
+type EyeClip = { topL: number; topR: number; bot: number; radius: string; w: number; h: number };
 const EYE_STATES: Record<AvatarMood, EyeClip> = {
-  idle:       { topL: 0,  topR: 0,  bot: 0,  radius: "10px" },
-  happy:      { topL: 0,  topR: 0,  bot: 48, radius: "10px" },
-  surprised:  { topL: 0,  topR: 0,  bot: 0,  radius: "14px" },
-  sleepy:     { topL: 50, topR: 50, bot: 0,  radius: "10px" },
-  excited:    { topL: 0,  topR: 0,  bot: 10, radius: "8px"  },
-  suspicious: { topL: 35, topR: 48, bot: 0,  radius: "10px" },
+  idle:       { topL: 0,  topR: 0,  bot: 0,  radius: "10px", w: 18, h: 30 },
+  happy:      { topL: 0,  topR: 0,  bot: 48, radius: "10px", w: 18, h: 30 },
+  surprised:  { topL: 0,  topR: 0,  bot: 0,  radius: "50%",  w: 26, h: 38 },
+  sleepy:     { topL: 50, topR: 50, bot: 0,  radius: "10px", w: 18, h: 30 },
+  excited:    { topL: 0,  topR: 0,  bot: 10, radius: "8px",  w: 18, h: 30 },
+  suspicious: { topL: 35, topR: 48, bot: 0,  radius: "10px", w: 18, h: 30 },
+  angry:      { topL: 42, topR: 42, bot: 15, radius: "6px",  w: 18, h: 30 },
+  sad:        { topL: 0,  topR: 0,  bot: 0,  radius: "10px", w: 18, h: 30 },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -259,13 +263,39 @@ export default function Banaspati({
   // ── Apply eye shape from mood ──────────────────────────────────────────────
   const applyEyeMood = useCallback((m: AvatarMood) => {
     const s = EYE_STATES[m];
-    if (eyeLeftRef.current) {
-      eyeLeftRef.current.style.clipPath     = `inset(${s.topL}% 0% ${s.bot}% 0%)`;
-      eyeLeftRef.current.style.borderRadius = s.radius;
-    }
-    if (eyeRightRef.current) {
-      eyeRightRef.current.style.clipPath     = `inset(${s.topR}% 0% ${s.bot}% 0%)`;
-      eyeRightRef.current.style.borderRadius = s.radius;
+    // Apply size per mood (surprised = larger eyes)
+    [eyeLeftRef.current, eyeRightRef.current].forEach(el => {
+      if (el) { el.style.width = `${s.w}px`; el.style.height = `${s.h}px`; }
+    });
+    if (m === "angry") {
+      // Tilted polygon clips — inner edges slope downward to form a V-brow
+      if (eyeLeftRef.current) {
+        eyeLeftRef.current.style.clipPath     = "polygon(0% 28%, 100% 52%, 100% 88%, 0% 88%)";
+        eyeLeftRef.current.style.borderRadius = s.radius;
+      }
+      if (eyeRightRef.current) {
+        eyeRightRef.current.style.clipPath     = "polygon(0% 52%, 100% 28%, 100% 88%, 0% 88%)";
+        eyeRightRef.current.style.borderRadius = s.radius;
+      }
+    } else if (m === "sad") {
+      // Inverted V — outer edges droop down, inner edges stay high
+      if (eyeLeftRef.current) {
+        eyeLeftRef.current.style.clipPath     = "polygon(0% 48%, 100% 24%, 100% 100%, 0% 100%)";
+        eyeLeftRef.current.style.borderRadius = s.radius;
+      }
+      if (eyeRightRef.current) {
+        eyeRightRef.current.style.clipPath     = "polygon(0% 24%, 100% 48%, 100% 100%, 0% 100%)";
+        eyeRightRef.current.style.borderRadius = s.radius;
+      }
+    } else {
+      if (eyeLeftRef.current) {
+        eyeLeftRef.current.style.clipPath     = `inset(${s.topL}% 0% ${s.bot}% 0%)`;
+        eyeLeftRef.current.style.borderRadius = s.radius;
+      }
+      if (eyeRightRef.current) {
+        eyeRightRef.current.style.clipPath     = `inset(${s.topR}% 0% ${s.bot}% 0%)`;
+        eyeRightRef.current.style.borderRadius = s.radius;
+      }
     }
   }, []);
 
@@ -561,7 +591,9 @@ export default function Banaspati({
           width: 18px; height: 30px;
           background: #ffffff;
           transition: clip-path 0.32s cubic-bezier(0.4,0,0.2,1),
-                      border-radius 0.32s cubic-bezier(0.4,0,0.2,1);
+                      border-radius 0.32s cubic-bezier(0.4,0,0.2,1),
+                      width 0.32s cubic-bezier(0.4,0,0.2,1),
+                      height 0.32s cubic-bezier(0.4,0,0.2,1);
         }
       `}</style>
 
@@ -650,7 +682,7 @@ export default function Banaspati({
             <div
               ref={eyeContainerRef}
               style={{
-                display: "flex", gap: "32px", marginTop: "-12px",
+                display: "flex", gap: "32px", marginTop: "-18px",
                 position: "relative", zIndex: 2,
                 willChange: "transform",
               }}

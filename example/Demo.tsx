@@ -33,6 +33,7 @@ export default function Demo() {
     ghost:    { mood: "sleepy"  as AvatarMood, sphereOpacity: 0.3, sphereScale: 1,   flameAmplitude: 30, flameIntensity: 1.8, flameDrift: 0.5, flameNoiseScale: 1.5, flameUpwardBias: 0.85, flameSpread: 2.2 },
     dramatic: { mood: "excited" as AvatarMood, sphereOpacity: 1,   sphereScale: 1.5, flameAmplitude: 70, flameIntensity: 2.0, flameDrift: 2.5, flameNoiseScale: 2.0, flameUpwardBias: 1.2,  flameSpread: 1.8 },
     minimal:  { mood: "idle"    as AvatarMood, sphereOpacity: 1,   sphereScale: 0.8, flameAmplitude: 20, flameIntensity: 0.5, flameDrift: 0.5, flameNoiseScale: 1.0, flameUpwardBias: 0.6,  flameSpread: 3.0 },
+    rage:     { mood: "angry"   as AvatarMood, sphereOpacity: 1,   sphereScale: 1.2, flameAmplitude: 80, flameIntensity: 2.0, flameDrift: 3.0, flameNoiseScale: 2.5, flameUpwardBias: 1.4,  flameSpread: 1.2 },
   };
 
   const applyPreset = (name: keyof typeof presets) => {
@@ -133,7 +134,7 @@ export default function Demo() {
             <label style={sectionLabelStyle}>▸ Mood <span style={{ color: colors.mid }}>{mood}</span></label>
             <select value={mood} onChange={(e) => setMood(e.target.value as AvatarMood)}
               style={{ width: "100%", padding: `${spacing.sm}px ${spacing.md}px`, border: `1px solid ${colors.border}`, background: "rgba(8,16,32,0.9)", color: colors.hi, fontSize: fontSizes.sm, fontFamily: "inherit", cursor: "pointer", outline: "none" }}>
-              {(["idle", "happy", "surprised", "sleepy", "excited", "suspicious"] as AvatarMood[]).map((m) => (
+              {(["idle", "happy", "surprised", "sleepy", "excited", "suspicious", "angry", "sad"] as AvatarMood[]).map((m) => (
                 <option key={m} value={m} style={{ background: colors.bg }}>{m.toUpperCase()}</option>
               ))}
             </select>
