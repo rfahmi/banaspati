@@ -695,12 +695,12 @@ export default function Banaspati({
           100% { transform: var(--sr) translateX(calc(var(--sd) + 24px)) scale(0); opacity: 0; }
         }
         @keyframes ba-bubbleIn {
-          0%   { opacity: 0; transform: translateX(-50%) translateY(6px) scale(0.92); }
-          100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+          0%   { opacity: 0; transform: translateY(6px) scale(0.92); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
         }
         @keyframes ba-bubbleOut {
-          0%   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-          100% { opacity: 0; transform: translateX(-50%) translateY(6px) scale(0.92); }
+          0%   { opacity: 1; transform: translateY(0) scale(1); }
+          100% { opacity: 0; transform: translateY(6px) scale(0.92); }
         }
         .ba-eye {
           will-change: transform;
@@ -715,6 +715,12 @@ export default function Banaspati({
         }
       `}</style>
 
+      {/* Outer layout — vertically stacks avatar + speech bubble */}
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}>
       {/* Scene container — sized to contain bounce headroom + shadow */}
       <div style={{
         position: "relative",
@@ -817,15 +823,11 @@ export default function Banaspati({
         <div
           key={`${bubbleText}-${speechKey}`}
           style={{
-            position: "relative",
-            left: "50%",
-            transform: "translateX(-50%)",
             zIndex: 10,
             pointerEvents: "none",
             animation: bubbleVisible
               ? "ba-bubbleIn 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards"
               : "ba-bubbleOut 0.22s ease-in forwards",
-            marginTop: "4px",
           }}
         >
           {/* Upward-pointing tail (border outline) */}
@@ -872,6 +874,7 @@ export default function Banaspati({
           </div>
         </div>
       )}
+      </div>
     </>
   );
 }
