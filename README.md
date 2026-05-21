@@ -161,8 +161,10 @@ function InteractiveAvatar() {
 | `flameUpwardBias` | `number` | `0.85` | How much side flames redirect upward (0–1.5). `0` = pure outward, `1.5` = strongly upward. |
 | `flameSpread` | `number` | `2.2` | Flame taper sharpness (0.5–4). Low = wide flame, high = narrow pointed tip. |
 | `flameGlowSpread` | `number` | `1.0` | Multiplier for the soft glow/corona size and opacity around the flame (0–2). Set to `0` to completely disable the glow to fit in smaller containers without cropping. |
-| `speech` | `string` | `undefined` | Text to display in a speech bubble above the avatar. Bubble auto-hides after 5 seconds. |
-| `speechKey` | `string \| number` | `undefined` | Change this value to re-trigger the speech bubble, even with the same text. |
+| `speech` | `string` | `undefined` | Text to display in a typewriter speech element above the avatar. |
+| `speechKey` | `string \| number` | `undefined` | Change this value to re-trigger the speech typewriter animation, even with the same text. |
+| `speechFontSize` | `number` | `16` | The base font size for the speech text (in CSS pixels). Will scale proportionally with the overall size. |
+| `speechDisappearDelay` | `number` | `3000` | Delay (in milliseconds) before the speech text fades out after typing finishes. |
 | `followCursor` | `boolean` | `true` | When `true`, eyes follow the mouse cursor. Set to `false` for manual gaze control via `lookAt`. |
 | `lookAt` | `{ x: number; y: number }` | `undefined` | Manually control gaze direction when `followCursor` is `false`. Both axes range from `-1` (left/up) to `1` (right/down). |
 | `onClick` | `() => void` | `undefined` | Callback fired when the avatar is clicked. |

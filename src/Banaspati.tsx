@@ -203,6 +203,19 @@ export interface BanaspatiProps {
   speechKey?: string | number;
 
   /**
+   * The base font size for the speech text in CSS pixels.
+   * Scales proportionally with the character size.
+   * @default 16
+   */
+  speechFontSize?: number;
+
+  /**
+   * Delay in milliseconds before the speech text starts disappearing after typing finishes.
+   * @default 3000
+   */
+  speechDisappearDelay?: number;
+
+  /**
    * The overall size of the avatar in CSS pixels.
    * Scales the sphere, eyes, flame, shadow, and bounce physics proportionally.
    * @default 160
@@ -267,6 +280,8 @@ export default function Banaspati({
   onClick,
   speech,
   speechKey,
+  speechFontSize = 16,
+  speechDisappearDelay = 3000,
   size           = 160,
   responsive     = false,
 }: BanaspatiProps) {
@@ -310,25 +325,7 @@ export default function Banaspati({
   const flameOffset  = (flameCanvas - ballSize) / 2;
   const gravity      = 2.8 * scaleFactor;
 
-  // ── Speech bubble state ────────────────────────────────────────────────────
-  const [bubbleText, setBubbleText]       = useState<string | undefined>();
-  const [bubbleVisible, setBubbleVisible] = useState(false);
-  const speechClearRef = useRef<ReturnType<typeof setTimeout>>();
 
-  useEffect(() => {
-    if (speech && speech.length > 0) {
-      clearTimeout(speechClearRef.current);
-      setBubbleText(speech);
-      setBubbleVisible(true);
-    } else {
-      setBubbleVisible(false);
-      // Remove element after fade-out animation completes
-      speechClearRef.current = setTimeout(() => setBubbleText(undefined), 250);
-    }
-    return () => {
-      clearTimeout(speechClearRef.current);
-    };
-  }, [speech, speechKey]);
 
   // ── DOM refs ───────────────────────────────────────────────────────────────
   const wrapperRef      = useRef<HTMLDivElement>(null);
@@ -768,17 +765,14 @@ export default function Banaspati({
     <>
       {/* Scoped keyframe styles — injected once, harmless if component mounts multiple times */}
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
         @keyframes ba-sparkOut {
           0%   { transform: var(--sr) translateX(var(--sd)) scale(1); opacity: 1; }
           100% { transform: var(--sr) translateX(calc(var(--sd) + ${24 * scaleFactor}px)) scale(0); opacity: 0; }
         }
-        @keyframes ba-bubbleIn {
-          0%   { opacity: 0; transform: translateY(${6 * scaleFactor}px) scale(0.92); }
-          100% { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        @keyframes ba-bubbleOut {
-          0%   { opacity: 1; transform: translateY(0) scale(1); }
-          100% { opacity: 0; transform: translateY(${6 * scaleFactor}px) scale(0.92); }
+        @keyframes ba-blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
         }
         .ba-eye {
           will-change: transform;
@@ -900,71 +894,162 @@ export default function Banaspati({
               <div ref={eyeRightRef} className="ba-eye" />
             </div>
           </div>
+          <FloatingText
+            message={speech}
+            speechKey={speechKey}
+            scaleFactor={scaleFactor}
+            fontSize={speechFontSize}
+            disappearDelay={speechDisappearDelay}
+          />
         </div>
       </div>
-
-      {/* Speech bubble — appears below the avatar */}
-      {bubbleText && (
-        <div
-          key={`${bubbleText}-${speechKey}`}
-          style={{
-            zIndex: 10,
-            pointerEvents: "none",
-            marginTop: `${16 * scaleFactor}px`,
-            animation: bubbleVisible
-              ? "ba-bubbleIn 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards"
-              : "ba-bubbleOut 0.22s ease-in forwards",
-          }}
-        >
-          {/* Bubble body with integrated tail */}
-          <div style={{
-            position: "relative",
-            background: "rgba(12, 22, 42, 0.92)",
-            borderTop: "1px solid rgba(160,190,220,0.35)",
-            borderRight: "1px solid rgba(160,190,220,0.35)",
-            borderBottom: "1px solid rgba(160,190,220,0.35)",
-            borderLeft: "3px solid rgba(160,190,220,0.35)",
-            color: "#c8d8ec",
-            fontFamily: "ui-monospace, 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Menlo, Consolas, monospace",
-            fontSize: "0.75rem",
-            fontWeight: 400,
-            lineHeight: 1.55,
-            letterSpacing: "0.04em",
-            padding: "8px 16px",
-            maxWidth: 400,
-            minWidth: 40,
-            width: "max-content",
-            textAlign: "center",
-            wordBreak: "break-word",
-            whiteSpace: "pre-wrap",
-          }}>
-            {/* Upward-pointing tail (border) — absolutely positioned on top */}
-            <div style={{
-              position: "absolute",
-              top: -7,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: 0, height: 0,
-              borderLeft: "7px solid transparent",
-              borderRight: "7px solid transparent",
-              borderBottom: "7px solid rgba(160,190,220,0.35)",
-            }} />
-            {/* Upward-pointing tail (fill) */}
-            <div style={{
-              position: "absolute",
-              top: -5,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: 0, height: 0,
-              borderLeft: "6px solid transparent",
-              borderRight: "6px solid transparent",
-              borderBottom: "6px solid rgba(12, 22, 42, 0.92)",
-            }} />
-            {bubbleText}
-          </div>
-        </div>
-      )}
       </div>
     </>
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Typewriter & Glitch Text Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+const GLITCH_CHARS = "!@#$%^&*<>?/|\\~`ABCDEFabcdef01234";
+
+function useTypewriter(text: string, speed = 45) {
+  const [displayed, setDisplayed] = useState("");
+  const [done, setDone] = useState(false);
+  const indexRef = useRef(0);
+
+  useEffect(() => {
+    setDisplayed("");
+    setDone(false);
+    indexRef.current = 0;
+    if (!text) return;
+
+    const interval = setInterval(() => {
+      if (indexRef.current >= text.length) {
+        setDone(true);
+        clearInterval(interval);
+        return;
+      }
+      setDisplayed(text.slice(0, indexRef.current + 1));
+      indexRef.current++;
+    }, speed);
+
+    return () => clearInterval(interval);
+  }, [text, speed]);
+
+  return { displayed, done };
+}
+
+function GlitchText({ text, done }: { text: string; done: boolean }) {
+  const [glitched, setGlitched] = useState(text);
+
+  useEffect(() => {
+    if (!done || !text) {
+      setGlitched(text);
+      return;
+    }
+
+    let runs = 0;
+    const max = 6;
+    const interval = setInterval(() => {
+      runs++;
+      if (runs >= max) {
+        setGlitched(text);
+        clearInterval(interval);
+        return;
+      }
+      setGlitched(
+        text.split("").map((ch) =>
+          Math.random() < 0.12 ? GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)] : ch
+        ).join("")
+      );
+    }, 60);
+
+    return () => clearInterval(interval);
+  }, [done, text]);
+
+  return <>{glitched}</>;
+}
+
+interface FloatingTextProps {
+  message?: string;
+  speechKey?: string | number;
+  scaleFactor: number;
+  fontSize: number;
+  disappearDelay: number;
+}
+
+function FloatingText({ message, speechKey, scaleFactor, fontSize, disappearDelay }: FloatingTextProps) {
+  const { displayed, done } = useTypewriter(message || "", 40);
+  const [visible, setVisible] = useState(true);
+  const [fading, setFading] = useState(false);
+  const lines = displayed.split("\n");
+
+  useEffect(() => {
+    setVisible(true);
+    setFading(false);
+    if (!message) return;
+    const hold = message.length * 40 + disappearDelay;
+    const t1 = setTimeout(() => setFading(true), hold);
+    const t2 = setTimeout(() => setVisible(false), hold + 700);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [message, speechKey, disappearDelay]);
+
+  if (!visible || !message) return null;
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        bottom: `calc(100% + ${24 * scaleFactor}px)`,
+        left: "50%",
+        transform: "translateX(-50%)",
+        whiteSpace: "pre",
+        fontFamily: "'Share Tech Mono', monospace",
+        fontSize: `${fontSize * scaleFactor}px`,
+        letterSpacing: "0.08em",
+        lineHeight: "1.65",
+        color: "#7effd4",
+        textShadow: "0 0 8px #3fffc0, 0 0 22px #00ffaa55",
+        pointerEvents: "none",
+        userSelect: "none",
+        opacity: fading ? 0 : 1,
+        transition: "opacity 0.7s ease",
+        zIndex: 20,
+      }}
+    >
+      {lines.map((line, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: `${6 * scaleFactor}px`, justifyContent: "center" }}>
+          <span style={{ color: "#3fffc088", fontSize: `${(fontSize * 0.75) * scaleFactor}px` }}>
+            {i === lines.length - 1 && !done ? "›" : "·"}
+          </span>
+          <GlitchText text={line} done={done} />
+          {i === lines.length - 1 && !done && (
+            <span style={{
+              display: "inline-block",
+              width: `${(fontSize * 0.6) * scaleFactor}px`,
+              height: `${fontSize * scaleFactor}px`,
+              background: "#7effd4",
+              boxShadow: "0 0 6px #3fffc0",
+              animation: "ba-blink 0.7s step-end infinite",
+              marginLeft: `${2 * scaleFactor}px`,
+            }} />
+          )}
+        </div>
+      ))}
+
+      {/* scanline overlay on text */}
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,170,0.03) 2px, rgba(0,255,170,0.03) 4px)",
+        pointerEvents: "none",
+      }} />
+    </div>
+  );
+}
+

@@ -9,7 +9,6 @@ import {
   HudPage,
   PanelCorners,
   PanelHeader,
-  HudTextField,
   HudToggle,
   HudTrackpad,
   useClock,
@@ -35,6 +34,8 @@ export default function Demo() {
   const [lookAt, setLookAt] = useState({ x: 0, y: 0 });
   const [size, setSize] = useState(160);
   const [responsive, setResponsive] = useState(false);
+  const [speechFontSize, setSpeechFontSize] = useState(16);
+  const [speechDisappearDelay, setSpeechDisappearDelay] = useState(3000);
   const [jsonInput, setJsonInput] = useState(
     JSON.stringify(
       {
@@ -126,6 +127,8 @@ export default function Demo() {
 
   const sliders = [
     { label: responsive ? "Overall Size (Auto)" : "Overall Size", value: size, set: setSize, min: 80, max: 320, step: 10, disabled: responsive },
+    { label: "Speech Font Size",   value: speechFontSize,   set: setSpeechFontSize,  min: 10,  max: 32,  step: 1    },
+    { label: "Speech Auto Delay",  value: speechDisappearDelay, set: setSpeechDisappearDelay, min: 1000, max: 10000, step: 500 },
     { label: "Sphere Opacity",    value: sphereOpacity,   set: setSphereOpacity,   min: 0,   max: 1,   step: 0.1  },
     { label: "Sphere Scale",      value: sphereScale,     set: setSphereScale,     min: 0.5, max: 2,   step: 0.1  },
     { label: "Flame Amplitude",   value: flameAmplitude,  set: setFlameAmplitude,  min: 0,   max: 80,  step: 5    },
@@ -183,6 +186,8 @@ export default function Demo() {
                 flameGlowSpread={flameGlowSpread}
                 speech={speech || undefined}
                 speechKey={speechKey}
+                speechFontSize={speechFontSize}
+                speechDisappearDelay={speechDisappearDelay}
                 followCursor={followCursor}
                 lookAt={followCursor ? undefined : lookAt}
                 size={size}
@@ -205,6 +210,8 @@ export default function Demo() {
               ["GLOW SPREAD",  flameGlowSpread.toFixed(1)],
               ["RESPONSIVE",   responsive ? "ON" : "OFF"],
               ["OVERALL SIZE", responsive ? "AUTO (RESPONSIVE)" : `${size}px`],
+              ["SPEECH SIZE",  `${speechFontSize}px`],
+              ["SPEECH DELAY", `${speechDisappearDelay}ms`],
             ].map(([label, val]) => (
               <div key={label} style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: colors.dim, letterSpacing: "0.1em" }}>{label}</span>
@@ -214,19 +221,73 @@ export default function Demo() {
           </div>
           {/* Speech input */}
           <div style={{ marginTop: spacing.lg, paddingTop: spacing.lg, borderTop: `1px solid ${colors.border}` }}>
-            <HudTextField
-              label="Speech"
-              value={speechInput}
-              onChange={setSpeechInput}
-              placeholder="Type something…"
-              submitLabel="SAY"
-              onSubmit={() => {
-                if (speechInput.trim()) {
-                  setSpeech(speechInput.trim());
-                  setSpeechKey((k) => k + 1);
-                }
-              }}
-            />
+            <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs, marginBottom: spacing.sm }}>
+              <div style={{ display: "flex", gap: spacing.sm }}>
+                <textarea
+                  value={speechInput}
+                  onChange={(e) => setSpeechInput(e.target.value)}
+                  placeholder="Type something multi-line… (Ctrl+Enter to Say)"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                      e.preventDefault();
+                      if (speechInput.trim()) {
+                        setSpeech(speechInput.trim());
+                        setSpeechKey((k) => k + 1);
+                      }
+                    }
+                  }}
+                  rows={3}
+                  style={{
+                    flex: 1,
+                    background: "rgba(120,160,200,0.02)",
+                    border: `1px solid ${colors.border}`,
+                    color: colors.hi,
+                    fontFamily: "ui-monospace, monospace",
+                    fontSize: fontSizes.xs,
+                    padding: spacing.sm,
+                    resize: "vertical",
+                    minHeight: 60,
+                    outline: "none",
+                    transition: "border-color 0.2s, box-shadow 0.2s",
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = colors.borderHi;
+                    e.currentTarget.style.boxShadow = "0 0 8px rgba(120,160,200,0.15)";
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = colors.border;
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    if (speechInput.trim()) {
+                      setSpeech(speechInput.trim());
+                      setSpeechKey((k) => k + 1);
+                    }
+                  }}
+                  style={{
+                    width: 70,
+                    background: "rgba(120,160,200,0.08)",
+                    color: colors.hi,
+                    border: `1px solid ${colors.border}`,
+                    cursor: "pointer",
+                    fontWeight: 500,
+                    fontFamily: "inherit",
+                    fontSize: fontSizes.xs,
+                    letterSpacing: "0.08em",
+                    transition: "all 0.2s",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(120,160,200,0.18)"; e.currentTarget.style.borderColor = colors.borderHi; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(120,160,200,0.08)"; e.currentTarget.style.borderColor = colors.border; }}
+                >
+                  SAY
+                </button>
+              </div>
+            </div>
             <button
               onClick={() => {
                 setSpeechInput("");
@@ -376,7 +437,14 @@ export default function Demo() {
           <div style={{ display: "flex", flexDirection: "column", gap: spacing.lg }}>
             {sliders.map((s) => {
               const disabled = s.disabled;
-              const valueText = disabled ? "AUTO" : s.value.toFixed(2);
+              let valueText = disabled ? "AUTO" : s.value.toFixed(2);
+              if (!disabled) {
+                if (s.label.includes("Delay")) {
+                  valueText = `${s.value}ms`;
+                } else if (s.label.includes("Size")) {
+                  valueText = `${s.value.toFixed(0)}px`;
+                }
+              }
               const pct = disabled ? 50 : ((s.value - s.min) / (s.max - s.min)) * 100;
               return (
                 <div key={s.label} style={{ opacity: disabled ? 0.45 : 1, transition: "opacity 0.22s" }}>
