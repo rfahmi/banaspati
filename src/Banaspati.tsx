@@ -186,6 +186,12 @@ export interface BanaspatiProps {
    */
   onClick?: () => void;
 
+  /**
+   * Fired on pointerdown on the sphere. Useful for implementing custom drag
+   * in frameless Electron windows without conflicting with onClick.
+   */
+  onPointerDown?: (e: React.PointerEvent<HTMLDivElement>) => void;
+
   // ── Speech ──────────────────────────────────────────────────────────────
 
   /**
@@ -278,6 +284,7 @@ export default function Banaspati({
   followCursor   = true,
   lookAt,
   onClick,
+  onPointerDown,
   speech,
   speechKey,
   speechFontSize = 16,
@@ -851,6 +858,7 @@ export default function Banaspati({
           <div
             ref={ballRef}
             onClick={handleBlobClick}
+            onPointerDown={onPointerDown}
             style={{
               position: "relative",
               width: "100%", height: "100%",
@@ -894,14 +902,16 @@ export default function Banaspati({
               <div ref={eyeRightRef} className="ba-eye" />
             </div>
           </div>
-          <FloatingText
-            message={speech}
-            speechKey={speechKey}
-            scaleFactor={scaleFactor}
-            fontSize={speechFontSize}
-            disappearDelay={speechDisappearDelay}
-          />
         </div>
+
+        {/* Speech bubble: outside wrapperRef so it doesn't bounce */}
+        <FloatingText
+          message={speech}
+          speechKey={speechKey}
+          scaleFactor={scaleFactor}
+          fontSize={speechFontSize}
+          disappearDelay={speechDisappearDelay}
+        />
       </div>
       </div>
     </>
@@ -985,6 +995,12 @@ function FloatingText({ message, speechKey, scaleFactor, fontSize, disappearDela
   const [visible, setVisible] = useState(true);
   const [fading, setFading] = useState(false);
   const lines = displayed.split("\n");
+  
+  // Clamp font size to ensure readability at small avatar sizes
+  const scaledFontSize = Math.max(10, fontSize * scaleFactor);
+  const scaledIconSize = Math.max(7.5, (fontSize * 0.75) * scaleFactor);
+  const scaledCursorWidth = Math.max(6, (fontSize * 0.6) * scaleFactor);
+  const scaledCursorHeight = Math.max(10, fontSize * scaleFactor);
 
   useEffect(() => {
     setVisible(true);
@@ -1010,7 +1026,7 @@ function FloatingText({ message, speechKey, scaleFactor, fontSize, disappearDela
         transform: "translateX(-50%)",
         whiteSpace: "pre",
         fontFamily: "'Share Tech Mono', monospace",
-        fontSize: `${fontSize * scaleFactor}px`,
+        fontSize: `${scaledFontSize}px`,
         letterSpacing: "0.08em",
         lineHeight: "1.65",
         color: "#7effd4",
@@ -1024,15 +1040,15 @@ function FloatingText({ message, speechKey, scaleFactor, fontSize, disappearDela
     >
       {lines.map((line, i) => (
         <div key={i} style={{ display: "flex", alignItems: "center", gap: `${6 * scaleFactor}px`, justifyContent: "center" }}>
-          <span style={{ color: "#3fffc088", fontSize: `${(fontSize * 0.75) * scaleFactor}px` }}>
+          <span style={{ color: "#3fffc088", fontSize: `${scaledIconSize}px` }}>
             {i === lines.length - 1 && !done ? "›" : "·"}
           </span>
           <GlitchText text={line} done={done} />
           {i === lines.length - 1 && !done && (
             <span style={{
               display: "inline-block",
-              width: `${(fontSize * 0.6) * scaleFactor}px`,
-              height: `${fontSize * scaleFactor}px`,
+              width: `${scaledCursorWidth}px`,
+              height: `${scaledCursorHeight}px`,
               background: "#7effd4",
               boxShadow: "0 0 6px #3fffc0",
               animation: "ba-blink 0.7s step-end infinite",

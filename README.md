@@ -168,6 +168,7 @@ function InteractiveAvatar() {
 | `followCursor` | `boolean` | `true` | When `true`, eyes follow the mouse cursor. Set to `false` for manual gaze control via `lookAt`. |
 | `lookAt` | `{ x: number; y: number }` | `undefined` | Manually control gaze direction when `followCursor` is `false`. Both axes range from `-1` (left/up) to `1` (right/down). |
 | `onClick` | `() => void` | `undefined` | Callback fired when the avatar is clicked. |
+| `onPointerDown` | `(e: React.PointerEvent<HTMLDivElement>) => void` | `undefined` | Callback fired on pointerdown on the sphere. Useful for detecting drag events in frameless Electron windows without conflicting with onClick. |
 
 ### `AvatarMood`
 
@@ -332,6 +333,42 @@ function GazeControlledAvatar() {
 - ✅ Firefox (latest)
 - ✅ Safari (latest)
 - ✅ Mobile browsers (iOS Safari, Chrome Mobile)
+
+---
+
+## 🔧 Recent Improvements
+
+### Version 1.0.1+ Updates
+
+#### 1. **JSX Transform Fixed**
+The component now uses the automatic JSX runtime (`react-jsx`), eliminating the need for explicit React imports in JSX code. This prevents `React is not defined` errors in consuming applications.
+
+#### 2. **Electron Drag Support via `onPointerDown`**
+New `onPointerDown` prop allows Electron apps to distinguish between clicks and drag events on the avatar. Particularly useful in frameless windows where you need to handle window dragging without triggering the bounce animation:
+
+```tsx
+<Banaspati
+  onPointerDown={(e) => {
+    // Detect drag start in Electron frameless windows
+    // Can suppress onClick if drag distance exceeds threshold
+    console.log("Pointer down:", e);
+  }}
+/>
+```
+
+#### 3. **Speech Bubble Position Fixed**
+The `FloatingText` speech bubble now renders outside the physics-driven bounce container, keeping it stationary while the avatar bounces. Previously, the bubble would bounce along with the avatar, creating a jarring visual effect.
+
+#### 4. **Text Readability at Small Sizes**
+The `speechFontSize` now includes a minimum clamp of 10 pixels to ensure text remains readable even at small avatar sizes. At `size=100`, text will no longer render below the readable threshold.
+
+```tsx
+<Banaspati
+  size={100}           // Small avatar
+  speechFontSize={16}  // Will render at ~10px minimum, not below
+  speech="Still readable!"
+/>
+```
 
 ---
 
