@@ -26,12 +26,15 @@ export default function Demo() {
   const [flameNoiseScale, setFlameNoiseScale] = useState(1.5);
   const [flameUpwardBias, setFlameUpwardBias] = useState(0.85);
   const [flameSpread, setFlameSpread] = useState(2.2);
+  const [flameGlowSpread, setFlameGlowSpread] = useState(1.0);
   const [clickCount, setClickCount] = useState(0);
   const [speech, setSpeech] = useState("");
   const [speechKey, setSpeechKey] = useState(0);
   const [speechInput, setSpeechInput] = useState("");
   const [followCursor, setFollowCursor] = useState(true);
   const [lookAt, setLookAt] = useState({ x: 0, y: 0 });
+  const [size, setSize] = useState(160);
+  const [responsive, setResponsive] = useState(false);
   const [jsonInput, setJsonInput] = useState(
     JSON.stringify(
       {
@@ -46,6 +49,7 @@ export default function Demo() {
           flameNoiseScale: null,
           flameUpwardBias: null,
           flameSpread: null,
+          flameGlowSpread: null,
           gaze: { x: null, y: null, z: null },
         },
       },
@@ -85,6 +89,7 @@ export default function Demo() {
         if (vs.flameNoiseScale != null) setFlameNoiseScale(vs.flameNoiseScale);
         if (vs.flameUpwardBias != null) setFlameUpwardBias(vs.flameUpwardBias);
         if (vs.flameSpread != null)    setFlameSpread(vs.flameSpread);
+        if (vs.flameGlowSpread != null) setFlameGlowSpread(vs.flameGlowSpread);
 
         if (vs.gaze && (vs.gaze.x != null || vs.gaze.y != null)) {
           setFollowCursor(false);
@@ -103,11 +108,11 @@ export default function Demo() {
   const { isMobile } = useWindowWidth();
 
   const presets = {
-    default:  { mood: "idle"    as AvatarMood, sphereOpacity: 1,   sphereScale: 1,   flameAmplitude: 40, flameIntensity: 1.0, flameDrift: 1.0, flameNoiseScale: 1.5, flameUpwardBias: 0.85, flameSpread: 2.2 },
-    ghost:    { mood: "sleepy"  as AvatarMood, sphereOpacity: 0.3, sphereScale: 1,   flameAmplitude: 30, flameIntensity: 1.8, flameDrift: 0.5, flameNoiseScale: 1.5, flameUpwardBias: 0.85, flameSpread: 2.2 },
-    dramatic: { mood: "excited" as AvatarMood, sphereOpacity: 1,   sphereScale: 1.5, flameAmplitude: 70, flameIntensity: 2.0, flameDrift: 2.5, flameNoiseScale: 2.0, flameUpwardBias: 1.2,  flameSpread: 1.8 },
-    minimal:  { mood: "idle"    as AvatarMood, sphereOpacity: 1,   sphereScale: 0.8, flameAmplitude: 20, flameIntensity: 0.5, flameDrift: 0.5, flameNoiseScale: 1.0, flameUpwardBias: 0.6,  flameSpread: 3.0 },
-    rage:     { mood: "angry"   as AvatarMood, sphereOpacity: 1,   sphereScale: 1.2, flameAmplitude: 80, flameIntensity: 2.0, flameDrift: 3.0, flameNoiseScale: 2.5, flameUpwardBias: 1.4,  flameSpread: 1.2 },
+    default:  { mood: "idle"    as AvatarMood, sphereOpacity: 1,   sphereScale: 1,   flameAmplitude: 40, flameIntensity: 1.0, flameDrift: 1.0, flameNoiseScale: 1.5, flameUpwardBias: 0.85, flameSpread: 2.2, flameGlowSpread: 1.0 },
+    ghost:    { mood: "sleepy"  as AvatarMood, sphereOpacity: 0.3, sphereScale: 1,   flameAmplitude: 30, flameIntensity: 1.8, flameDrift: 0.5, flameNoiseScale: 1.5, flameUpwardBias: 0.85, flameSpread: 2.2, flameGlowSpread: 1.0 },
+    dramatic: { mood: "excited" as AvatarMood, sphereOpacity: 1,   sphereScale: 1.5, flameAmplitude: 70, flameIntensity: 2.0, flameDrift: 2.5, flameNoiseScale: 2.0, flameUpwardBias: 1.2,  flameSpread: 1.8, flameGlowSpread: 1.5 },
+    minimal:  { mood: "idle"    as AvatarMood, sphereOpacity: 1,   sphereScale: 0.8, flameAmplitude: 20, flameIntensity: 0.5, flameDrift: 0.5, flameNoiseScale: 1.0, flameUpwardBias: 0.6,  flameSpread: 3.0, flameGlowSpread: 0.1 },
+    rage:     { mood: "angry"   as AvatarMood, sphereOpacity: 1,   sphereScale: 1.2, flameAmplitude: 80, flameIntensity: 2.0, flameDrift: 3.0, flameNoiseScale: 2.5, flameUpwardBias: 1.4,  flameSpread: 1.2, flameGlowSpread: 1.8 },
   };
 
   const applyPreset = (name: keyof typeof presets) => {
@@ -116,13 +121,16 @@ export default function Demo() {
     setFlameAmplitude(p.flameAmplitude); setFlameIntensity(p.flameIntensity);
     setFlameDrift(p.flameDrift); setFlameNoiseScale(p.flameNoiseScale);
     setFlameUpwardBias(p.flameUpwardBias); setFlameSpread(p.flameSpread);
+    setFlameGlowSpread(p.flameGlowSpread);
   };
 
   const sliders = [
+    { label: responsive ? "Overall Size (Auto)" : "Overall Size", value: size, set: setSize, min: 80, max: 320, step: 10, disabled: responsive },
     { label: "Sphere Opacity",    value: sphereOpacity,   set: setSphereOpacity,   min: 0,   max: 1,   step: 0.1  },
     { label: "Sphere Scale",      value: sphereScale,     set: setSphereScale,     min: 0.5, max: 2,   step: 0.1  },
     { label: "Flame Amplitude",   value: flameAmplitude,  set: setFlameAmplitude,  min: 0,   max: 80,  step: 5    },
     { label: "Flame Intensity",   value: flameIntensity,  set: setFlameIntensity,  min: 0,   max: 2,   step: 0.1  },
+    { label: "Flame Glow Spread", value: flameGlowSpread, set: setFlameGlowSpread, min: 0,   max: 2,   step: 0.1  },
     { label: "Flame Drift",       value: flameDrift,      set: setFlameDrift,      min: 0,   max: 3,   step: 0.1  },
     { label: "Flame Noise Scale", value: flameNoiseScale, set: setFlameNoiseScale, min: 0.3, max: 3,   step: 0.1  },
     { label: "Flame Upward Bias", value: flameUpwardBias, set: setFlameUpwardBias, min: 0,   max: 1.5, step: 0.05 },
@@ -152,23 +160,41 @@ export default function Demo() {
           <PanelCorners />
           <PanelHeader>Entity Viewer</PanelHeader>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.lg }}>
-            <Banaspati
-              mood={mood}
-              sphereOpacity={sphereOpacity} sphereScale={sphereScale}
-              flameAmplitude={flameAmplitude} flameIntensity={flameIntensity}
-              flameDrift={flameDrift} flameNoiseScale={flameNoiseScale}
-              flameUpwardBias={flameUpwardBias} flameSpread={flameSpread}
-              speech={speech || undefined}
-              speechKey={speechKey}
-              followCursor={followCursor}
-              lookAt={followCursor ? undefined : lookAt}
-              onClick={() => {
-                setClickCount((c) => c + 1);
-                setMood("excited");
-                setTimeout(() => setMood("happy"), 500);
-                setTimeout(() => setMood("idle"), 1500);
-              }}
-            />
+            <div style={{
+              width: responsive ? "100%" : undefined,
+              height: responsive ? "280px" : undefined,
+              maxWidth: responsive ? "100%" : undefined,
+              border: responsive ? `1px dashed ${colors.border}` : "1px solid transparent",
+              padding: responsive ? spacing.md : undefined,
+              boxSizing: "border-box",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              resize: responsive ? "both" : "none",
+              overflow: responsive ? "hidden" : "visible",
+              transition: "border 0.28s, height 0.28s",
+            }}>
+              <Banaspati
+                mood={mood}
+                sphereOpacity={sphereOpacity} sphereScale={sphereScale}
+                flameAmplitude={flameAmplitude} flameIntensity={flameIntensity}
+                flameDrift={flameDrift} flameNoiseScale={flameNoiseScale}
+                flameUpwardBias={flameUpwardBias} flameSpread={flameSpread}
+                flameGlowSpread={flameGlowSpread}
+                speech={speech || undefined}
+                speechKey={speechKey}
+                followCursor={followCursor}
+                lookAt={followCursor ? undefined : lookAt}
+                size={size}
+                responsive={responsive}
+                onClick={() => {
+                  setClickCount((c) => c + 1);
+                  setMood("excited");
+                  setTimeout(() => setMood("happy"), 500);
+                  setTimeout(() => setMood("idle"), 1500);
+                }}
+              />
+            </div>
           </div>
           <div style={{ marginTop: spacing.xl, paddingTop: spacing.lg, borderTop: `1px solid ${colors.border}`, display: "grid", gridTemplateColumns: "1fr 1fr", gap: `${spacing.sm}px ${spacing.lg}px`, fontSize: fontSizes.xs }}>
             {[
@@ -176,6 +202,9 @@ export default function Demo() {
               ["INTERACTIONS", clickCount.toString().padStart(4, "0")],
               ["OPACITY",      sphereOpacity.toFixed(1)],
               ["SCALE",        sphereScale.toFixed(1)],
+              ["GLOW SPREAD",  flameGlowSpread.toFixed(1)],
+              ["RESPONSIVE",   responsive ? "ON" : "OFF"],
+              ["OVERALL SIZE", responsive ? "AUTO (RESPONSIVE)" : `${size}px`],
             ].map(([label, val]) => (
               <div key={label} style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: colors.dim, letterSpacing: "0.1em" }}>{label}</span>
@@ -326,21 +355,41 @@ export default function Demo() {
               />
             )}
           </div>
+
+          {/* Layout Mode */}
+          <div style={{ marginBottom: spacing.xl }}>
+            <label style={sectionLabelStyle}>▸ Layout Mode</label>
+            <HudToggle
+              value={responsive}
+              onChange={setResponsive}
+              label="RESPONSIVE"
+              offLabel="FIXED SIZE"
+              style={{ marginBottom: spacing.md }}
+            />
+            {responsive && (
+              <p style={{ fontSize: fontSizes.xs, color: colors.dim, margin: `${spacing.xs}px 0 0`, lineHeight: 1.45 }}>
+                💡 Container is resizable. Click and drag the bottom-right corner of the dashed boundary in the Entity Viewer.
+              </p>
+            )}
+          </div>
           {/* Sliders */}
           <div style={{ display: "flex", flexDirection: "column", gap: spacing.lg }}>
             {sliders.map((s) => {
-              const pct = ((s.value - s.min) / (s.max - s.min)) * 100;
+              const disabled = s.disabled;
+              const valueText = disabled ? "AUTO" : s.value.toFixed(2);
+              const pct = disabled ? 50 : ((s.value - s.min) / (s.max - s.min)) * 100;
               return (
-                <div key={s.label}>
+                <div key={s.label} style={{ opacity: disabled ? 0.45 : 1, transition: "opacity 0.22s" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.xs }}>
                     <span style={{ color: colors.dim, fontSize: fontSizes.xs, textTransform: "uppercase", letterSpacing: "0.08em" }}>{s.label}</span>
-                    <span style={{ color: colors.hi, fontSize: fontSizes.xs, fontWeight: 400, fontVariantNumeric: "tabular-nums", minWidth: 48, textAlign: "right" }}>{s.value.toFixed(2)}</span>
+                    <span style={{ color: colors.hi, fontSize: fontSizes.xs, fontWeight: 400, fontVariantNumeric: "tabular-nums", minWidth: 48, textAlign: "right" }}>{valueText}</span>
                   </div>
                   <div style={{ position: "relative", height: 6, background: "rgba(120,160,200,0.06)", border: `1px solid ${colors.border}` }}>
-                    <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: `${pct}%`, background: colors.mid, transition: "width 0.15s" }} />
+                    <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: `${pct}%`, background: disabled ? "rgba(120,160,200,0.2)" : colors.mid, transition: "width 0.15s" }} />
                     <input type="range" min={s.min} max={s.max} step={s.step} value={s.value}
+                      disabled={disabled}
                       onChange={(e) => s.set(parseFloat(e.target.value))}
-                      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer", margin: 0 }} />
+                      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0, cursor: disabled ? "not-allowed" : "pointer", margin: 0 }} />
                   </div>
                   <div style={{ marginTop: 3, fontSize: fontSizes.xs, lineHeight: 1, userSelect: "none" }}>
                     {Array.from({ length: 20 }, (_, i) => (

@@ -151,13 +151,16 @@ function InteractiveAvatar() {
 |------|------|---------|-------------|
 | `mood` | `AvatarMood` | `"idle"` | Controls the eye expression: `"idle"`, `"happy"`, `"surprised"`, `"sleepy"`, `"excited"`, `"suspicious"`, `"angry"`, `"sad"` |
 | `sphereOpacity` | `number` | `1` | Opacity of the sphere body (0–1). Eyes remain fully visible. |
-| `sphereScale` | `number` | `1` | Scale multiplier for the entire avatar. `1` = default size, `2` = double size. |
+| `sphereScale` | `number` | `1` | Scale multiplier for the sphere body. |
+| `size` | `number` | `160` | The overall size of the avatar in CSS pixels. Scales the sphere, eyes, flame, shadow, and bounce physics proportionally. |
+| `responsive` | `boolean` | `false` | When `true`, the avatar's overall size will automatically stretch and scale to fit the parent container dynamically, maintaining proper proportions. |
 | `flameAmplitude` | `number` | `40` | Maximum spike height of flame tips in pixels (0–80). |
 | `flameIntensity` | `number` | `1.0` | Overall brightness multiplier (0–2). `0` = invisible, `2` = very bright. |
 | `flameDrift` | `number` | `1.0` | Speed of upward flame animation (0–3). `0` = frozen, `3` = fast-moving. |
 | `flameNoiseScale` | `number` | `1.5` | Frequency of Perlin noise (0.3–3). Low = smooth waves, high = turbulent detail. |
 | `flameUpwardBias` | `number` | `0.85` | How much side flames redirect upward (0–1.5). `0` = pure outward, `1.5` = strongly upward. |
 | `flameSpread` | `number` | `2.2` | Flame taper sharpness (0.5–4). Low = wide flame, high = narrow pointed tip. |
+| `flameGlowSpread` | `number` | `1.0` | Multiplier for the soft glow/corona size and opacity around the flame (0–2). Set to `0` to completely disable the glow to fit in smaller containers without cropping. |
 | `speech` | `string` | `undefined` | Text to display in a speech bubble above the avatar. Bubble auto-hides after 5 seconds. |
 | `speechKey` | `string \| number` | `undefined` | Change this value to re-trigger the speech bubble, even with the same text. |
 | `followCursor` | `boolean` | `true` | When `true`, eyes follow the mouse cursor. Set to `false` for manual gaze control via `lookAt`. |

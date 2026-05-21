@@ -153,6 +153,14 @@ export interface BanaspatiProps {
    */
   flameSpread?: number;
 
+  /**
+   * Multiplier for the soft glow/corona size and opacity around the flame.
+   * Can be set to 0 to completely disable the outer glow so that the avatar
+   * fits cleanly inside smaller container boundaries without edge cropping.
+   * Range: 0–2  @default 1.0
+   */
+  flameGlowSpread?: number;
+
   // ── Gaze control ──────────────────────────────────────────────────────────
 
   /**
@@ -193,22 +201,30 @@ export interface BanaspatiProps {
    * @default undefined
    */
   speechKey?: string | number;
+
+  /**
+   * The overall size of the avatar in CSS pixels.
+   * Scales the sphere, eyes, flame, shadow, and bounce physics proportionally.
+   * @default 160
+   */
+  size?: number;
+
+  /**
+   * Whether the overall size of the avatar should dynamically scale to fit
+   * its parent container. If `true`, the avatar will automatically scale
+   * based on the container dimensions.
+   * @default false
+   */
+  responsive?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Internal constants
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Diameter of the sphere in CSS pixels. */
-const BALL_SIZE     = 160;
-/** Maximum height the sphere reaches at the top of a bounce in pixels. */
-const BOUNCE_HEIGHT = 90;
 /** Rest Y position (0 = ground level). */
 const GROUND_Y      = 0;
-/** Canvas size for the flame; must be larger than BALL_SIZE to allow bleed. */
-const FLAME_CANVAS  = 320;
-/** How many pixels the flame canvas bleeds outside the sphere wrapper on each side. */
-const FLAME_OFFSET  = (FLAME_CANVAS - BALL_SIZE) / 2;
+
 
 type EyeClip = { topL: number; topR: number; bot: number; radius: string; w: number; h: number };
 const EYE_STATES: Record<AvatarMood, EyeClip> = {
@@ -245,12 +261,55 @@ export default function Banaspati({
   flameNoiseScale = 1.5,
   flameUpwardBias = 0.85,
   flameSpread    = 2.2,
+  flameGlowSpread = 1.0,
   followCursor   = true,
   lookAt,
   onClick,
   speech,
   speechKey,
+  size           = 160,
+  responsive     = false,
 }: BanaspatiProps) {
+  const [observedSize, setObservedSize] = useState<number>(size);
+  const responsiveContainerRef = useRef<HTMLDivElement>(null);
+
+  // Synchronize state with size prop if not in responsive mode
+  useEffect(() => {
+    if (!responsive) {
+      setObservedSize(size);
+    }
+  }, [size, responsive]);
+
+  // Resize observer to watch the parent container's dimensions
+  useEffect(() => {
+    if (!responsive || !responsiveContainerRef.current) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          // Solves sceneSize = Math.min(width, height)
+          // activeSize = sceneSize / 1.625
+          const nextSize = Math.max(40, Math.min(width, height) / 1.625);
+          setObservedSize(nextSize);
+        }
+      }
+    });
+
+    observer.observe(responsiveContainerRef.current);
+    return () => {
+      observer.disconnect();
+    };
+  }, [responsive]);
+
+  const activeSize   = responsive ? observedSize : size;
+  const scaleFactor  = activeSize / 160;
+  const ballSize     = activeSize;
+  const bounceHeight = activeSize * (90 / 160);
+  const flameCanvas  = activeSize * (320 / 160);
+  const flameOffset  = (flameCanvas - ballSize) / 2;
+  const gravity      = 2.8 * scaleFactor;
+
   // ── Speech bubble state ────────────────────────────────────────────────────
   const [bubbleText, setBubbleText]       = useState<string | undefined>();
   const [bubbleVisible, setBubbleVisible] = useState(false);
@@ -289,6 +348,7 @@ export default function Banaspati({
     noiseScale: flameNoiseScale,
     upwardBias: flameUpwardBias,
     spread:     flameSpread,
+    glowSpread: flameGlowSpread,
   });
   const sphereScaleRef   = useRef(sphereScale);
   const sphereOpacityRef = useRef(sphereOpacity);
@@ -302,7 +362,8 @@ export default function Banaspati({
     flameRef.current.noiseScale = flameNoiseScale;
     flameRef.current.upwardBias = flameUpwardBias;
     flameRef.current.spread     = flameSpread;
-  }, [flameAmplitude, flameIntensity, flameDrift, flameNoiseScale, flameUpwardBias, flameSpread]);
+    flameRef.current.glowSpread = flameGlowSpread;
+  }, [flameAmplitude, flameIntensity, flameDrift, flameNoiseScale, flameUpwardBias, flameSpread, flameGlowSpread]);
 
   useEffect(() => { sphereScaleRef.current = sphereScale; }, [sphereScale]);
 
@@ -320,6 +381,14 @@ export default function Banaspati({
   const flameRafRef = useRef<number>();
   const blinkTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
+  // Helper to scale border radius if it is in px (percentage values like "50%" remain unchanged)
+  const getScaledRadius = (radius: string, sf: number) => {
+    if (radius.endsWith("px")) {
+      return `${parseFloat(radius) * sf}px`;
+    }
+    return radius;
+  };
+
   // ── Apply eye shape from mood ──────────────────────────────────────────────
   const applyEyeMood = useCallback((m: AvatarMood) => {
     const s = EYE_STATES[m];
@@ -329,64 +398,67 @@ export default function Banaspati({
     });
     // Apply size per mood (surprised = larger eyes)
     [eyeLeftRef.current, eyeRightRef.current].forEach(el => {
-      if (el) { el.style.width = `${s.w}px`; el.style.height = `${s.h}px`; }
+      if (el) {
+        el.style.width = `${s.w * scaleFactor}px`;
+        el.style.height = `${s.h * scaleFactor}px`;
+      }
     });
     if (m === "angry") {
       // V-brow — inner edges slope downward
       if (eyeLeftRef.current) {
         eyeLeftRef.current.style.clipPath     = "polygon(0% 28%, 100% 52%, 100% 85%, 0% 85%)";
-        eyeLeftRef.current.style.borderRadius = s.radius;
+        eyeLeftRef.current.style.borderRadius = getScaledRadius(s.radius, scaleFactor);
       }
       if (eyeRightRef.current) {
         eyeRightRef.current.style.clipPath     = "polygon(0% 52%, 100% 28%, 100% 85%, 0% 85%)";
-        eyeRightRef.current.style.borderRadius = s.radius;
+        eyeRightRef.current.style.borderRadius = getScaledRadius(s.radius, scaleFactor);
       }
     } else if (m === "sad") {
       // Inverted V — outer edges droop down, inner edges stay high
       if (eyeLeftRef.current) {
         eyeLeftRef.current.style.clipPath     = "polygon(0% 48%, 100% 24%, 100% 100%, 0% 100%)";
-        eyeLeftRef.current.style.borderRadius = s.radius;
+        eyeLeftRef.current.style.borderRadius = getScaledRadius(s.radius, scaleFactor);
       }
       if (eyeRightRef.current) {
         eyeRightRef.current.style.clipPath     = "polygon(0% 24%, 100% 48%, 100% 100%, 0% 100%)";
-        eyeRightRef.current.style.borderRadius = s.radius;
+        eyeRightRef.current.style.borderRadius = getScaledRadius(s.radius, scaleFactor);
       }
     } else if (m === "suspicious") {
       // The Rock eyebrow raise — one eye wide open, the other squinting hard
       if (eyeLeftRef.current) {
-        eyeLeftRef.current.style.width       = "24px";
-        eyeLeftRef.current.style.height      = "36px";
+        eyeLeftRef.current.style.width       = `${24 * scaleFactor}px`;
+        eyeLeftRef.current.style.height      = `${36 * scaleFactor}px`;
         eyeLeftRef.current.style.clipPath    = `inset(0% 0% 0% 0%)`;
         eyeLeftRef.current.style.borderRadius = "50%";
       }
       if (eyeRightRef.current) {
-        eyeRightRef.current.style.width       = "18px";
-        eyeRightRef.current.style.height      = "28px";
+        eyeRightRef.current.style.width       = `${18 * scaleFactor}px`;
+        eyeRightRef.current.style.height      = `${28 * scaleFactor}px`;
         eyeRightRef.current.style.clipPath    = `inset(58% 0% 0% 0%)`;
-        eyeRightRef.current.style.borderRadius = s.radius;
+        eyeRightRef.current.style.borderRadius = getScaledRadius(s.radius, scaleFactor);
       }
     } else if (m === "thinking") {
       // Contemplative look — eyes shift up-left, slight size difference
       [eyeLeftRef.current, eyeRightRef.current].forEach(el => {
         if (el) {
-          el.style.width       = `${s.w}px`;
-          el.style.height      = `${s.h}px`;
+          el.style.width       = `${s.w * scaleFactor}px`;
+          el.style.height      = `${s.h * scaleFactor}px`;
           el.style.clipPath    = `inset(0% 0% 0% 0%)`;
           el.style.borderRadius = s.radius;
-          el.style.transform   = "translate(-3px, -4px)";
+          el.style.transform   = `translate(${-3 * scaleFactor}px, ${-4 * scaleFactor}px)`;
         }
       });
     } else {
       if (eyeLeftRef.current) {
         eyeLeftRef.current.style.clipPath     = `inset(${s.topL}% 0% ${s.bot}% 0%)`;
-        eyeLeftRef.current.style.borderRadius = s.radius;
+        eyeLeftRef.current.style.borderRadius = getScaledRadius(s.radius, scaleFactor);
       }
       if (eyeRightRef.current) {
         eyeRightRef.current.style.clipPath     = `inset(${s.topR}% 0% ${s.bot}% 0%)`;
-        eyeRightRef.current.style.borderRadius = s.radius;
+        eyeRightRef.current.style.borderRadius = getScaledRadius(s.radius, scaleFactor);
       }
     }
-  }, []);
+  }, [scaleFactor]);
 
   // Apply mood expression when prop changes
   useEffect(() => {
@@ -423,9 +495,9 @@ export default function Banaspati({
     lookAtRef.current = lookAt;
     // When manually controlling, immediately update target eye
     if (!followCursorRef.current && lookAt) {
-      targetEye.current = { x: lookAt.x * 28, y: lookAt.y * 22 };
+      targetEye.current = { x: lookAt.x * 28 * scaleFactor, y: lookAt.y * 22 * scaleFactor };
     }
-  }, [lookAt?.x, lookAt?.y]);
+  }, [lookAt?.x, lookAt?.y, scaleFactor]);
 
   // Reset gaze to centre when followCursor is toggled off without a lookAt
   useEffect(() => {
@@ -444,9 +516,9 @@ export default function Banaspati({
     const dx = e.clientX - cx;
     const dy = e.clientY - cy;
     const dist  = Math.sqrt(dx * dx + dy * dy) || 1;
-    const scale = Math.min(dist, 320) / 320;
-    targetEye.current = { x: (dx / dist) * 28 * scale, y: (dy / dist) * 22 * scale };
-  }, []);
+    const scale = Math.min(dist, ballSize * 2) / (ballSize * 2);
+    targetEye.current = { x: (dx / dist) * 28 * scaleFactor * scale, y: (dy / dist) * 22 * scaleFactor * scale };
+  }, [scaleFactor, ballSize]);
 
   useEffect(() => {
     window.addEventListener("mousemove", handleMouseMove, { passive: true });
@@ -455,7 +527,6 @@ export default function Banaspati({
 
   // ── Main physics rAF loop ──────────────────────────────────────────────────
   useEffect(() => {
-    const GRAVITY      = 2.8;
     const EYE_LERP     = 0.10;
     const SQ_STIFFNESS = 0.30;
     const SQ_DAMPING   = 0.54;
@@ -466,11 +537,12 @@ export default function Banaspati({
       const p = physRef.current;
 
       // 1. Bounce gravity
-      if (p.y < GROUND_Y || p.vy < 0) { p.vy += GRAVITY; p.y += p.vy; }
+      if (p.y < GROUND_Y || p.vy < 0) { p.vy += gravity; p.y += p.vy; }
       if (p.y >= GROUND_Y) {
         const impact = Math.abs(p.vy);
         p.y = GROUND_Y; p.vy = 0;
-        if (impact > 3) p.sqv += Math.min(impact * 0.018, 0.30);
+        const scaledImpact = impact / scaleFactor;
+        if (scaledImpact > 3) p.sqv += Math.min(scaledImpact * 0.018, 0.30);
       }
 
       // 2. Squash spring
@@ -493,7 +565,7 @@ export default function Banaspati({
 
       // 5. Apply transforms
       const heightAboveGround = -p.y;
-      const heightRatio = Math.max(0, Math.min(1, heightAboveGround / BOUNCE_HEIGHT));
+      const heightRatio = Math.max(0, Math.min(1, heightAboveGround / bounceHeight));
       const sc = sphereScaleRef.current;
 
       if (wrapperRef.current)
@@ -505,15 +577,15 @@ export default function Banaspati({
         const coreAlpha = 0.12 + (1 - heightRatio) * 0.10;
         if (sphereBgRef.current)
           sphereBgRef.current.style.boxShadow =
-            `inset 0 0 18px 4px rgba(0,230,190,${coreAlpha.toFixed(3)})`;
+            `inset 0 0 ${18 * scaleFactor}px ${4 * scaleFactor}px rgba(0,230,190,${coreAlpha.toFixed(3)})`;
       }
 
       // Ground shadow
       if (shadowRef.current) {
-        const sW  = 60  + (1 - heightRatio) * 80;
-        const sH  = 10  + (1 - heightRatio) * 14;
+        const sW  = (60  + (1 - heightRatio) * 80) * scaleFactor;
+        const sH  = (10  + (1 - heightRatio) * 14) * scaleFactor;
         const sOp = 0.15 + (1 - heightRatio) * 0.65;
-        const sB  = 14  + (1 - heightRatio) * 18;
+        const sB  = (14  + (1 - heightRatio) * 18) * scaleFactor;
         shadowRef.current.style.width     = `${sW}px`;
         shadowRef.current.style.height    = `${sH}px`;
         shadowRef.current.style.opacity   = `${sOp}`;
@@ -528,8 +600,8 @@ export default function Banaspati({
 
       // 3D perspective foreshortening — eyes sit on the sphere surface,
       // so the eye turning away from the viewer compresses horizontally.
-      const eyeHalfGap = 16;                    // half of the 32 px CSS gap
-      const perspR     = (BALL_SIZE / 2) * 0.85; // tighter radius → more visible effect
+      const eyeHalfGap = 16 * scaleFactor;                    // half of the 32 px CSS gap
+      const perspR     = (ballSize / 2) * 0.85; // tighter radius → more visible effect
       const leftNorm   = (ex.x - eyeHalfGap) / perspR;
       const rightNorm  = (ex.x + eyeHalfGap) / perspR;
       const leftSX     = Math.sqrt(Math.max(0.01, 1 - leftNorm  * leftNorm));
@@ -549,7 +621,7 @@ export default function Banaspati({
     physRef.current.vy = 0;
     frameRef.current = requestAnimationFrame(tick);
     return () => { if (frameRef.current) cancelAnimationFrame(frameRef.current); };
-  }, []);
+  }, [scaleFactor, ballSize, bounceHeight, gravity]);
 
   // ── Flame canvas rAF loop ──────────────────────────────────────────────────
   useEffect(() => {
@@ -557,7 +629,7 @@ export default function Banaspati({
     if (!canvas) return;
 
     const dpr  = window.devicePixelRatio || 1;
-    const SIZE = FLAME_CANVAS;
+    const SIZE = flameCanvas;
     canvas.width        = SIZE * dpr;
     canvas.height       = SIZE * dpr;
     canvas.style.width  = `${SIZE}px`;
@@ -566,17 +638,20 @@ export default function Banaspati({
     ctx.scale(dpr, dpr);
 
     const perlin       = buildPerlin();
-    const sphereRadius = BALL_SIZE / 2;
+    const sphereRadius = ballSize / 2;
 
     function drawFrame(ts: number) {
       const {
-        amplitude:  flameAmplitude,
+        amplitude:  rawAmplitude,
         intensity:  flameIntensity,
         drift:      upwardDrift,
         noiseScale,
         upwardBias,
         spread,
+        glowSpread,
       } = flameRef.current;
+
+      const flameAmplitude = rawAmplitude * scaleFactor;
 
       const cx = SIZE / 2, cy = SIZE / 2;
       ctx.clearRect(0, 0, SIZE, SIZE);
@@ -618,7 +693,7 @@ export default function Banaspati({
 
       // Gradient geometry
       const gradCY = cy - sphereRadius * 0.22;
-      const gradR  = baseRadius + flameAmplitude * 1.3;
+      const gradR  = baseRadius + (flameAmplitude * 1.3) * glowSpread;
 
       // Draws one smooth flame layer with a radial gradient fill
       function drawFlameLayer(scale: number, alpha: number, inner: string, outer: string) {
@@ -655,16 +730,19 @@ export default function Banaspati({
       // Layer 3 — bright inner core (near-white teal tips)
       drawFlameLayer(0.86, 0.25 * flameIntensity, "rgba(210,255,245,__A__)", "rgba(0,230,195,__A__)");
 
-      // Soft ambient corona around the whole shape
-      ctx.globalCompositeOperation = "source-over";
-      const corona = ctx.createRadialGradient(cx, gradCY, sphereRadius, cx, gradCY, sphereRadius * 2.6);
-      corona.addColorStop(0,    `rgba(0,180,155,${(0.05  * flameIntensity).toFixed(3)})`);
-      corona.addColorStop(0.55, `rgba(0,140,125,${(0.022 * flameIntensity).toFixed(3)})`);
-      corona.addColorStop(1,    "rgba(0,100,90,0)");
-      ctx.beginPath();
-      ctx.arc(cx, gradCY, sphereRadius * 2.6, 0, Math.PI * 2);
-      ctx.fillStyle = corona;
-      ctx.fill();
+      // Soft ambient corona around the whole shape (only rendered if glowSpread > 0)
+      if (glowSpread > 0) {
+        ctx.globalCompositeOperation = "source-over";
+        const coronaR = sphereRadius * (1.0 + 1.6 * glowSpread);
+        const corona = ctx.createRadialGradient(cx, gradCY, sphereRadius, cx, gradCY, coronaR);
+        corona.addColorStop(0,    `rgba(0,180,155,${(0.05  * flameIntensity * Math.min(glowSpread, 1.0)).toFixed(3)})`);
+        corona.addColorStop(0.55, `rgba(0,140,125,${(0.022 * flameIntensity * Math.min(glowSpread, 1.0)).toFixed(3)})`);
+        corona.addColorStop(1,    "rgba(0,100,90,0)");
+        ctx.beginPath();
+        ctx.arc(cx, gradCY, coronaR, 0, Math.PI * 2);
+        ctx.fillStyle = corona;
+        ctx.fill();
+      }
 
       ctx.globalCompositeOperation = "source-over";
       ctx.globalAlpha = 1;
@@ -674,13 +752,13 @@ export default function Banaspati({
 
     flameRafRef.current = requestAnimationFrame(drawFrame);
     return () => { if (flameRafRef.current) cancelAnimationFrame(flameRafRef.current); };
-  }, []);
+  }, [flameCanvas, ballSize, scaleFactor]);
 
   // ── Click handler ──────────────────────────────────────────────────────────
   const handleBlobClick = () => {
     if (physRef.current.y < -2) return; // ignore while already airborne
     physRef.current.y   = GROUND_Y;
-    physRef.current.vy  = -Math.sqrt(2 * 2.8 * BOUNCE_HEIGHT);
+    physRef.current.vy  = -Math.sqrt(2 * gravity * bounceHeight);
     physRef.current.jvx = 0.18;
     onClick?.();
   };
@@ -692,21 +770,21 @@ export default function Banaspati({
       <style>{`
         @keyframes ba-sparkOut {
           0%   { transform: var(--sr) translateX(var(--sd)) scale(1); opacity: 1; }
-          100% { transform: var(--sr) translateX(calc(var(--sd) + 24px)) scale(0); opacity: 0; }
+          100% { transform: var(--sr) translateX(calc(var(--sd) + ${24 * scaleFactor}px)) scale(0); opacity: 0; }
         }
         @keyframes ba-bubbleIn {
-          0%   { opacity: 0; transform: translateY(6px) scale(0.92); }
+          0%   { opacity: 0; transform: translateY(${6 * scaleFactor}px) scale(0.92); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
         }
         @keyframes ba-bubbleOut {
           0%   { opacity: 1; transform: translateY(0) scale(1); }
-          100% { opacity: 0; transform: translateY(6px) scale(0.92); }
+          100% { opacity: 0; transform: translateY(${6 * scaleFactor}px) scale(0.92); }
         }
         .ba-eye {
           will-change: transform;
           transform-origin: center center;
           flex-shrink: 0;
-          width: 18px; height: 30px;
+          width: ${18 * scaleFactor}px; height: ${30 * scaleFactor}px;
           background: #ffffff;
           transition: clip-path 0.32s cubic-bezier(0.4,0,0.2,1),
                       border-radius 0.32s cubic-bezier(0.4,0,0.2,1),
@@ -716,24 +794,31 @@ export default function Banaspati({
       `}</style>
 
       {/* Outer layout — vertically stacks avatar + speech bubble */}
-      <div style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-      }}>
+      <div
+        ref={responsiveContainerRef}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: responsive ? "center" : undefined,
+          width: responsive ? "100%" : undefined,
+          height: responsive ? "100%" : undefined,
+          boxSizing: "border-box",
+        }}
+      >
       {/* Scene container — sized to contain bounce headroom + shadow */}
       <div style={{
         position: "relative",
-        width:  `${BALL_SIZE + 100}px`,
-        height: `${BALL_SIZE + BOUNCE_HEIGHT + 10}px`,
+        width:  `${ballSize + 100 * scaleFactor}px`,
+        height: `${ballSize + bounceHeight + 10 * scaleFactor}px`,
         userSelect: "none",
       }}>
         {/* Ground shadow — size & opacity driven by physics loop */}
         <div
           ref={shadowRef}
           style={{
-            position: "absolute", bottom: `${10}px`, left: "50%",
-            width: "60px", height: "10px",
+            position: "absolute", bottom: `${10 * scaleFactor}px`, left: "50%",
+            width: `${60 * scaleFactor}px`, height: `${10 * scaleFactor}px`,
             background: "radial-gradient(ellipse, rgba(0,220,180,1) 0%, rgba(0,180,140,0.4) 50%, transparent 80%)",
             borderRadius: "50%",
             transformOrigin: "top center",
@@ -746,11 +831,11 @@ export default function Banaspati({
           ref={wrapperRef}
           style={{
             position: "absolute",
-            bottom: `${10}px`,
+            bottom: `${10 * scaleFactor}px`,
             left: "50%",
-            marginLeft: `-${BALL_SIZE / 2}px`,
-            width:  `${BALL_SIZE}px`,
-            height: `${BALL_SIZE}px`,
+            marginLeft: `-${ballSize / 2}px`,
+            width:  `${ballSize}px`,
+            height: `${ballSize}px`,
             willChange: "transform",
           }}
         >
@@ -759,10 +844,10 @@ export default function Banaspati({
             ref={flameCanvasRef}
             style={{
               position: "absolute",
-              top:  `-${FLAME_OFFSET}px`,
-              left: `-${FLAME_OFFSET}px`,
-              width:  `${FLAME_CANVAS}px`,
-              height: `${FLAME_CANVAS}px`,
+              top:  `-${flameOffset}px`,
+              left: `-${flameOffset}px`,
+              width:  `${flameCanvas}px`,
+              height: `${flameCanvas}px`,
               pointerEvents: "none",
               zIndex: 0,
             }}
@@ -796,7 +881,7 @@ export default function Banaspati({
                     #72f0e8 0%, #2dd4bf 18%, #10c8a8 35%,
                     #00b896 52%, #00a07c 70%, #008060 88%, #006048 100%)
                 `,
-                boxShadow: "inset 0 0 18px 4px rgba(0,230,190,0.12)",
+                boxShadow: `inset 0 0 ${18 * scaleFactor}px ${4 * scaleFactor}px rgba(0,230,190,0.12)`,
                 opacity: sphereOpacity,
                 pointerEvents: "none",
               }}
@@ -806,7 +891,7 @@ export default function Banaspati({
             <div
               ref={eyeContainerRef}
               style={{
-                display: "flex", gap: "32px", marginTop: "-18px",
+                display: "flex", gap: `${32 * scaleFactor}px`, marginTop: `${-18 * scaleFactor}px`,
                 position: "relative", zIndex: 2,
                 willChange: "transform",
               }}
@@ -825,7 +910,7 @@ export default function Banaspati({
           style={{
             zIndex: 10,
             pointerEvents: "none",
-            marginTop: "16px",
+            marginTop: `${16 * scaleFactor}px`,
             animation: bubbleVisible
               ? "ba-bubbleIn 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards"
               : "ba-bubbleOut 0.22s ease-in forwards",
