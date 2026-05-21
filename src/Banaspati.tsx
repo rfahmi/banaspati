@@ -328,6 +328,7 @@ export default function Banaspati({
   const scaleFactor  = activeSize / 160;
   const ballSize     = activeSize;
   const bounceHeight = activeSize * (90 / 160);
+  const containerHeight = ballSize + bounceHeight + 10 * scaleFactor;
   const flameCanvas  = activeSize * (320 / 160);
   const flameOffset  = (flameCanvas - ballSize) / 2;
   const gravity      = 2.8 * scaleFactor;
@@ -807,12 +808,34 @@ export default function Banaspati({
           boxSizing: "border-box",
         }}
       >
-      {/* Scene container — sized to contain bounce headroom + shadow */}
+      {/* Text + Ball flex container with overflow mechanism */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "flex-end",
+          width: `${ballSize + 100 * scaleFactor}px`,
+          height: `${containerHeight}px`,
+          position: "relative",
+        }}
+      >
+        {/* Speech bubble — max-height with overflow visible */}
+        <FloatingText
+          message={speech}
+          speechKey={speechKey}
+          scaleFactor={scaleFactor}
+          fontSize={speechFontSize}
+          disappearDelay={speechDisappearDelay}
+          containerHeight={containerHeight}
+        />
+
+      {/* Scene container — flex-shrink: 0 so it stays fixed size */}
       <div style={{
         position: "relative",
         width:  `${ballSize + 100 * scaleFactor}px`,
         height: `${ballSize + bounceHeight + 10 * scaleFactor}px`,
         userSelect: "none",
+        flexShrink: 0,
       }}>
         {/* Ground shadow — size & opacity driven by physics loop */}
         <div
@@ -903,15 +926,7 @@ export default function Banaspati({
             </div>
           </div>
         </div>
-
-        {/* Speech bubble: outside wrapperRef so it doesn't bounce */}
-        <FloatingText
-          message={speech}
-          speechKey={speechKey}
-          scaleFactor={scaleFactor}
-          fontSize={speechFontSize}
-          disappearDelay={speechDisappearDelay}
-        />
+      </div>
       </div>
       </div>
     </>
@@ -988,19 +1003,24 @@ interface FloatingTextProps {
   scaleFactor: number;
   fontSize: number;
   disappearDelay: number;
+  containerHeight: number;
 }
 
-function FloatingText({ message, speechKey, scaleFactor, fontSize, disappearDelay }: FloatingTextProps) {
+function FloatingText({ message, speechKey, scaleFactor, fontSize, disappearDelay, containerHeight }: FloatingTextProps) {
   const { displayed, done } = useTypewriter(message || "", 40);
   const [visible, setVisible] = useState(true);
   const [fading, setFading] = useState(false);
-  const lines = displayed.split("\n");
   
   // Clamp font size to ensure readability at small avatar sizes
   const scaledFontSize = Math.max(10, fontSize * scaleFactor);
-  const scaledIconSize = Math.max(7.5, (fontSize * 0.75) * scaleFactor);
   const scaledCursorWidth = Math.max(6, (fontSize * 0.6) * scaleFactor);
   const scaledCursorHeight = Math.max(10, fontSize * scaleFactor);
+  
+  // Calculate text dimensions
+  const lineHeight = 1.65;
+  const lineHeightPx = scaledFontSize * lineHeight;
+  // Max-height threshold: approximately 3 lines before text overflows
+  const maxHeightThreshold = lineHeightPx * 3;
 
   useEffect(() => {
     setVisible(true);
@@ -1020,11 +1040,18 @@ function FloatingText({ message, speechKey, scaleFactor, fontSize, disappearDela
   return (
     <div
       style={{
-        position: "absolute",
-        bottom: `calc(100% + ${24 * scaleFactor}px)`,
-        left: "50%",
-        transform: "translateX(-50%)",
-        whiteSpace: "pre",
+        width: "100%",
+        maxHeight: `${maxHeightThreshold}px`,
+        overflow: "visible",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "flex-end",
+        alignItems: "center",
+        marginBottom: `${-48 * scaleFactor}px`,
+        whiteSpace: "normal",
+        wordBreak: "break-word",
+        maxWidth: `${containerHeight * 1.5}px`,
+        textAlign: "center",
         fontFamily: "'Share Tech Mono', monospace",
         fontSize: `${scaledFontSize}px`,
         letterSpacing: "0.08em",
@@ -1038,33 +1065,29 @@ function FloatingText({ message, speechKey, scaleFactor, fontSize, disappearDela
         zIndex: 20,
       }}
     >
-      {lines.map((line, i) => (
-        <div key={i} style={{ display: "flex", alignItems: "center", gap: `${6 * scaleFactor}px`, justifyContent: "center" }}>
-          <span style={{ color: "#3fffc088", fontSize: `${scaledIconSize}px` }}>
-            {i === lines.length - 1 && !done ? "›" : "·"}
-          </span>
-          <GlitchText text={line} done={done} />
-          {i === lines.length - 1 && !done && (
-            <span style={{
-              display: "inline-block",
-              width: `${scaledCursorWidth}px`,
-              height: `${scaledCursorHeight}px`,
-              background: "#7effd4",
-              boxShadow: "0 0 6px #3fffc0",
-              animation: "ba-blink 0.7s step-end infinite",
-              marginLeft: `${2 * scaleFactor}px`,
-            }} />
-          )}
-        </div>
-      ))}
+      <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+        <GlitchText text={displayed} done={done} />
+        {!done && (
+          <span style={{
+            display: "inline-block",
+            width: `${scaledCursorWidth}px`,
+            height: `${scaledCursorHeight}px`,
+            background: "#7effd4",
+            boxShadow: "0 0 6px #3fffc0",
+            animation: "ba-blink 0.7s step-end infinite",
+            marginLeft: `${2 * scaleFactor}px`,
+            verticalAlign: "middle",
+          }} />
+        )}
 
-      {/* scanline overlay on text */}
-      <div style={{
-        position: "absolute",
-        inset: 0,
-        background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,170,0.03) 2px, rgba(0,255,170,0.03) 4px)",
-        pointerEvents: "none",
-      }} />
+        {/* scanline overlay on text */}
+        <div style={{
+          position: "absolute",
+          inset: 0,
+          background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,170,0.03) 2px, rgba(0,255,170,0.03) 4px)",
+          pointerEvents: "none",
+        }} />
+      </div>
     </div>
   );
 }
