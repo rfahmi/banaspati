@@ -99,6 +99,7 @@ export function BanaspatiV2({
     vx: 0, vy: 0,
     // target position (canvas space) — flame lerps toward this
     targetCx: -1, targetCy: -1, // -1 = uninitialized (will be set to S/2 on first loop)
+    offsetX: 0, offsetY: 0,
   });
 
   // ── Gaze ──────────────────────────────────────────────────────────────────
@@ -424,8 +425,10 @@ export function BanaspatiV2({
         d.vy = 0;
         d.lastX = e.clientX;
         d.lastY = e.clientY;
-        d.targetCx = clickX;
-        d.targetCy = clickY;
+        
+        // Calculate the offset so dragging from the edge doesn't snap to the center
+        d.offsetX = d.targetCx - clickX;
+        d.offsetY = d.targetCy - clickY;
       }
     }
     onPointerDown?.(e);
@@ -442,9 +445,9 @@ export function BanaspatiV2({
     d.vy = e.clientY - d.lastY;
     d.lastX = e.clientX;
     d.lastY = e.clientY;
-    // Target = exact cursor position in canvas space
-    d.targetCx = e.clientX - rect.left;
-    d.targetCy = e.clientY - rect.top;
+    // Target = cursor position in canvas space plus initial click offset
+    d.targetCx = (e.clientX - rect.left) + d.offsetX;
+    d.targetCy = (e.clientY - rect.top) + d.offsetY;
   };
 
   const handlePointerUp = () => { dragRef.current.isDragging = false; };
