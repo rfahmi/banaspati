@@ -71,19 +71,11 @@ function buildPerlin() {
 // Public types
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** The nine available mood expressions. Controls eye shape. */
-export type AvatarMood =
-  | "idle"        // neutral, round eyes
-  | "happy"       // bottom-clipped (smile-eyes)
-  | "surprised"   // wide open, larger radius
-  | "sleepy"      // top-clipped (half-closed)
-  | "excited"     // slightly bottom-clipped, smaller radius
-  | "suspicious"  // asymmetric top-clip (side-eye)
-  | "angry"       // furrowed, narrowed eyes (V-brow)
-  | "sad"         // drooping inner brow (inverted V)
-  | "thinking";   // eyes shifted up-left, contemplative look
+import { AvatarMood, FloatingText } from "./shared";
 
 export interface BanaspatiProps {
+
+
   // ── Mood ──────────────────────────────────────────────────────────────────
 
   /**
@@ -270,6 +262,9 @@ const EYE_STATES: Record<AvatarMood, EyeClip> = {
  * Prop changes (flame params, scale, opacity, mood) are applied via refs and
  * take effect on the very next frame — no unmount/remount needed.
  */
+// ─────────────────────────────────────────────────────────────────────────────
+// V1 (original sphere character)
+// ─────────────────────────────────────────────────────────────────────────────
 export default function Banaspati({
   mood           = "idle",
   sphereOpacity  = 1,
@@ -933,162 +928,5 @@ export default function Banaspati({
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Typewriter & Glitch Text Helpers
-// ─────────────────────────────────────────────────────────────────────────────
 
-const GLITCH_CHARS = "!@#$%^&*<>?/|\\~`ABCDEFabcdef01234";
-
-function useTypewriter(text: string, speed = 45) {
-  const [displayed, setDisplayed] = useState("");
-  const [done, setDone] = useState(false);
-  const indexRef = useRef(0);
-
-  useEffect(() => {
-    setDisplayed("");
-    setDone(false);
-    indexRef.current = 0;
-    if (!text) return;
-
-    const interval = setInterval(() => {
-      if (indexRef.current >= text.length) {
-        setDone(true);
-        clearInterval(interval);
-        return;
-      }
-      setDisplayed(text.slice(0, indexRef.current + 1));
-      indexRef.current++;
-    }, speed);
-
-    return () => clearInterval(interval);
-  }, [text, speed]);
-
-  return { displayed, done };
-}
-
-function GlitchText({ text, done }: { text: string; done: boolean }) {
-  const [glitched, setGlitched] = useState(text);
-
-  useEffect(() => {
-    if (!done || !text) {
-      setGlitched(text);
-      return;
-    }
-
-    let runs = 0;
-    const max = 6;
-    const interval = setInterval(() => {
-      runs++;
-      if (runs >= max) {
-        setGlitched(text);
-        clearInterval(interval);
-        return;
-      }
-      setGlitched(
-        text.split("").map((ch) =>
-          Math.random() < 0.12 ? GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)] : ch
-        ).join("")
-      );
-    }, 60);
-
-    return () => clearInterval(interval);
-  }, [done, text]);
-
-  return <>{glitched}</>;
-}
-
-interface FloatingTextProps {
-  message?: string;
-  speechKey?: string | number;
-  scaleFactor: number;
-  fontSize: number;
-  disappearDelay: number;
-  containerHeight: number;
-}
-
-function FloatingText({ message, speechKey, scaleFactor, fontSize, disappearDelay, containerHeight }: FloatingTextProps) {
-  const { displayed, done } = useTypewriter(message || "", 40);
-  const [visible, setVisible] = useState(true);
-  const [fading, setFading] = useState(false);
-  
-  // Clamp font size to ensure readability at small avatar sizes
-  const scaledFontSize = Math.max(10, fontSize * scaleFactor);
-  const scaledCursorWidth = Math.max(6, (fontSize * 0.6) * scaleFactor);
-  const scaledCursorHeight = Math.max(10, fontSize * scaleFactor);
-  
-  // Calculate text dimensions
-  const lineHeight = 1.65;
-  const lineHeightPx = scaledFontSize * lineHeight;
-  // Max-height threshold: approximately 3 lines before text overflows
-  const maxHeightThreshold = lineHeightPx * 3;
-
-  useEffect(() => {
-    setVisible(true);
-    setFading(false);
-    if (!message) return;
-    const hold = message.length * 40 + disappearDelay;
-    const t1 = setTimeout(() => setFading(true), hold);
-    const t2 = setTimeout(() => setVisible(false), hold + 700);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, [message, speechKey, disappearDelay]);
-
-  if (!visible || !message) return null;
-
-  return (
-    <div
-      style={{
-        width: "100%",
-        maxHeight: `${maxHeightThreshold}px`,
-        overflow: "visible",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "flex-end",
-        alignItems: "center",
-        marginBottom: `${-48 * scaleFactor}px`,
-        whiteSpace: "normal",
-        wordBreak: "break-word",
-        maxWidth: `${containerHeight * 1.5}px`,
-        textAlign: "center",
-        fontFamily: "'Share Tech Mono', monospace",
-        fontSize: `${scaledFontSize}px`,
-        letterSpacing: "0.08em",
-        lineHeight: "1.65",
-        color: "#7effd4",
-        textShadow: "0 0 8px #3fffc0, 0 0 22px #00ffaa55",
-        pointerEvents: "none",
-        userSelect: "none",
-        opacity: fading ? 0 : 1,
-        transition: "opacity 0.7s ease",
-        zIndex: 20,
-      }}
-    >
-      <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-        <GlitchText text={displayed} done={done} />
-        {!done && (
-          <span style={{
-            display: "inline-block",
-            width: `${scaledCursorWidth}px`,
-            height: `${scaledCursorHeight}px`,
-            background: "#7effd4",
-            boxShadow: "0 0 6px #3fffc0",
-            animation: "ba-blink 0.7s step-end infinite",
-            marginLeft: `${2 * scaleFactor}px`,
-            verticalAlign: "middle",
-          }} />
-        )}
-
-        {/* scanline overlay on text */}
-        <div style={{
-          position: "absolute",
-          inset: 0,
-          background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,170,0.03) 2px, rgba(0,255,170,0.03) 4px)",
-          pointerEvents: "none",
-        }} />
-      </div>
-    </div>
-  );
-}
 

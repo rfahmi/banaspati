@@ -1,5 +1,5 @@
-import { useState } from "react";
-import Banaspati, { type AvatarMood } from "../src";
+import { useState, useEffect } from "react";
+import { BanaspatiV2 } from "../src";
 import {
   colors,
   fontSizes,
@@ -16,16 +16,26 @@ import {
 } from "@rfahmi/rfui";
 
 export default function Demo() {
-  const [mood, setMood] = useState<AvatarMood>("idle");
-  const [sphereOpacity, setSphereOpacity] = useState(1);
-  const [sphereScale, setSphereScale] = useState(1);
-  const [flameAmplitude, setFlameAmplitude] = useState(40);
-  const [flameIntensity, setFlameIntensity] = useState(1.0);
-  const [flameDrift, setFlameDrift] = useState(1.0);
-  const [flameNoiseScale, setFlameNoiseScale] = useState(1.5);
-  const [flameUpwardBias, setFlameUpwardBias] = useState(0.85);
-  const [flameSpread, setFlameSpread] = useState(2.2);
-  const [flameGlowSpread, setFlameGlowSpread] = useState(1.0);
+
+  // V2 Props
+  const [v2Color, setV2Color] = useState("#10c8a8");
+  const [v2Wind, setV2Wind] = useState(0);
+  const [v2RiseSpeed, setV2RiseSpeed] = useState(1);
+  const [v2Size, setV2Size] = useState(1.2);
+  const [v2Turbulence, setV2Turbulence] = useState(25);
+  const [v2NoiseFreq, setV2NoiseFreq] = useState(0.015);
+  const [v2SparkCount, setV2SparkCount] = useState(12);
+
+  const [v2ShowFace, setV2ShowFace] = useState(true);
+  const [v2FaceColor, setV2FaceColor] = useState("#ffffff");
+  const [v2EyeSpacing, setV2EyeSpacing] = useState(16);
+  const [v2EyeSize, setV2EyeSize] = useState(5);
+  const [v2EyeSquint, setV2EyeSquint] = useState(0);
+  const [v2EyeTilt, setV2EyeTilt] = useState(0);
+  const [v2MouthWidth, setV2MouthWidth] = useState(8);
+  const [v2MouthOpen, setV2MouthOpen] = useState(0);
+  const [v2MouthSmile, setV2MouthSmile] = useState(6);
+  const [v2MouthY, setV2MouthY] = useState(14);
   const [clickCount, setClickCount] = useState(0);
   const [speech, setSpeech] = useState("");
   const [speechKey, setSpeechKey] = useState(0);
@@ -36,69 +46,79 @@ export default function Demo() {
   const [responsive, setResponsive] = useState(false);
   const [speechFontSize, setSpeechFontSize] = useState(16);
   const [speechDisappearDelay, setSpeechDisappearDelay] = useState(3000);
-  const [jsonInput, setJsonInput] = useState(
-    JSON.stringify(
-      {
-        speech: "",
-        mood: "",
-        visualState: {
-          scale: null,
-          opacity: null,
-          flameAmplitude: null,
-          flameIntensity: null,
-          flameDrift: null,
-          flameNoiseScale: null,
-          flameUpwardBias: null,
-          flameSpread: null,
-          flameGlowSpread: null,
-          gaze: { x: null, y: null, z: null },
-        },
-      },
-      null,
-      2
-    )
-  );
-  const [jsonError, setJsonError] = useState<string | null>(null);
+  const [jsonInput, setJsonInput] = useState("");
 
-  const VALID_MOODS: AvatarMood[] = ["idle", "happy", "surprised", "sleepy", "excited", "suspicious", "angry", "sad", "thinking"];
+  useEffect(() => {
+    setJsonInput(
+      JSON.stringify(
+        {
+          speech: speech,
+          expression: {
+            showFace: v2ShowFace,
+            faceColor: v2FaceColor,
+            eyeSpacing: v2EyeSpacing,
+            eyeSize: v2EyeSize,
+            eyeSquint: v2EyeSquint,
+            eyeTilt: v2EyeTilt,
+            mouthWidth: v2MouthWidth,
+            mouthOpen: v2MouthOpen,
+            mouthSmile: v2MouthSmile,
+            mouthY: v2MouthY,
+          },
+          visualState: {
+            v2Color,
+            v2Size,
+            v2Wind,
+            v2RiseSpeed,
+            v2Turbulence,
+            v2NoiseFreq,
+            v2SparkCount,
+          },
+        },
+        null,
+        2
+      )
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    speech, v2ShowFace, v2FaceColor, v2EyeSpacing, v2EyeSize, v2EyeSquint, v2EyeTilt,
+    v2MouthWidth, v2MouthOpen, v2MouthSmile, v2MouthY,
+    v2Color, v2Size, v2Wind, v2RiseSpeed, v2Turbulence, v2NoiseFreq, v2SparkCount
+  ]);
+  const [jsonError, setJsonError] = useState<string | null>(null);
 
   const applyJson = (raw: string) => {
     try {
       const data = JSON.parse(raw);
       setJsonError(null);
-
-      if (data.mood && typeof data.mood === "string") {
-        if (VALID_MOODS.includes(data.mood as AvatarMood)) {
-          setMood(data.mood as AvatarMood);
-        } else {
-          setJsonError(`Unknown mood "${data.mood}". Valid: ${VALID_MOODS.join(", ")}`);
-          return;
-        }
-      }
       if (data.speech && typeof data.speech === "string") {
         setSpeech(data.speech);
         setSpeechKey((k) => k + 1);
       }
 
-      const vs = data.visualState;
-      if (vs) {
-        if (vs.scale != null)          setSphereScale(vs.scale);
-        if (vs.opacity != null)        setSphereOpacity(vs.opacity);
-        if (vs.flameAmplitude != null) setFlameAmplitude(vs.flameAmplitude);
-        if (vs.flameIntensity != null) setFlameIntensity(vs.flameIntensity);
-        if (vs.flameDrift != null)     setFlameDrift(vs.flameDrift);
-        if (vs.flameNoiseScale != null) setFlameNoiseScale(vs.flameNoiseScale);
-        if (vs.flameUpwardBias != null) setFlameUpwardBias(vs.flameUpwardBias);
-        if (vs.flameSpread != null)    setFlameSpread(vs.flameSpread);
-        if (vs.flameGlowSpread != null) setFlameGlowSpread(vs.flameGlowSpread);
+      const expr = data.expression;
+      if (expr) {
+        if (expr.showFace != null)   setV2ShowFace(expr.showFace);
+        if (expr.faceColor != null)  setV2FaceColor(expr.faceColor);
+        if (expr.eyeSpacing != null) setV2EyeSpacing(expr.eyeSpacing);
+        if (expr.eyeSize != null)    setV2EyeSize(expr.eyeSize);
+        if (expr.eyeSquint != null)  setV2EyeSquint(expr.eyeSquint);
+        if (expr.eyeTilt != null)    setV2EyeTilt(expr.eyeTilt);
+        if (expr.mouthWidth != null) setV2MouthWidth(expr.mouthWidth);
+        if (expr.mouthOpen != null)  setV2MouthOpen(expr.mouthOpen);
+        if (expr.mouthSmile != null) setV2MouthSmile(expr.mouthSmile);
+        if (expr.mouthY != null)     setV2MouthY(expr.mouthY);
+      }
 
-        if (vs.gaze && (vs.gaze.x != null || vs.gaze.y != null)) {
-          setFollowCursor(false);
-          setLookAt({
-            x: vs.gaze.x ?? 0,
-            y: vs.gaze.y ?? 0,
-          });
-        }
+      const vis = data.visualState;
+      if (vis) {
+        if (vis.v2Color != null) setV2Color(vis.v2Color);
+        if (vis.v2Size != null) setV2Size(vis.v2Size);
+        if (vis.v2Wind != null) setV2Wind(vis.v2Wind);
+        if (vis.v2RiseSpeed != null) setV2RiseSpeed(vis.v2RiseSpeed);
+        if (vis.v2Turbulence != null) setV2Turbulence(vis.v2Turbulence);
+        if (vis.v2NoiseFreq != null) setV2NoiseFreq(vis.v2NoiseFreq);
+        if (vis.v2SparkCount != null) setV2SparkCount(vis.v2SparkCount);
       }
     } catch (err) {
       setJsonError((err as Error).message);
@@ -108,36 +128,80 @@ export default function Demo() {
   const clock = useClock();
   const { isMobile } = useWindowWidth();
 
-  const presets = {
-    default:  { mood: "idle"    as AvatarMood, sphereOpacity: 1,   sphereScale: 1,   flameAmplitude: 40, flameIntensity: 1.0, flameDrift: 1.0, flameNoiseScale: 1.5, flameUpwardBias: 0.85, flameSpread: 2.2, flameGlowSpread: 1.0 },
-    ghost:    { mood: "sleepy"  as AvatarMood, sphereOpacity: 0.3, sphereScale: 1,   flameAmplitude: 30, flameIntensity: 1.8, flameDrift: 0.5, flameNoiseScale: 1.5, flameUpwardBias: 0.85, flameSpread: 2.2, flameGlowSpread: 1.0 },
-    dramatic: { mood: "excited" as AvatarMood, sphereOpacity: 1,   sphereScale: 1.5, flameAmplitude: 70, flameIntensity: 2.0, flameDrift: 2.5, flameNoiseScale: 2.0, flameUpwardBias: 1.2,  flameSpread: 1.8, flameGlowSpread: 1.5 },
-    minimal:  { mood: "idle"    as AvatarMood, sphereOpacity: 1,   sphereScale: 0.8, flameAmplitude: 20, flameIntensity: 0.5, flameDrift: 0.5, flameNoiseScale: 1.0, flameUpwardBias: 0.6,  flameSpread: 3.0, flameGlowSpread: 0.1 },
-    rage:     { mood: "angry"   as AvatarMood, sphereOpacity: 1,   sphereScale: 1.2, flameAmplitude: 80, flameIntensity: 2.0, flameDrift: 3.0, flameNoiseScale: 2.5, flameUpwardBias: 1.4,  flameSpread: 1.2, flameGlowSpread: 1.8 },
+  const PRESETS: Record<string, any> = {
+    idle: {
+      v2MouthWidth: 8, v2MouthOpen: 0, v2MouthSmile: 0, v2MouthY: 14,
+      v2EyeSquint: 0, v2EyeTilt: 0, v2EyeSpacing: 16, v2EyeSize: 5,
+      v2Turbulence: 25, v2RiseSpeed: 1, v2SparkCount: 12, v2Color: "#10c8a8"
+    },
+    smile: {
+      v2MouthWidth: 10, v2MouthOpen: 0, v2MouthSmile: 6, v2MouthY: 14,
+      v2EyeSquint: 0.3, v2EyeTilt: 10, v2EyeSpacing: 16, v2EyeSize: 5,
+      v2Turbulence: 25, v2RiseSpeed: 1, v2SparkCount: 12, v2Color: "#10c8a8"
+    },
+    happy: {
+      v2MouthWidth: 14.5, v2MouthOpen: 4.5, v2MouthSmile: 15, v2MouthY: 23,
+      v2EyeSquint: 0, v2EyeTilt: -8, v2EyeSpacing: 22, v2EyeSize: 9,
+      v2Turbulence: 30, v2RiseSpeed: 1.2, v2SparkCount: 20, v2Color: "#10c8a8"
+    },
+    angry: {
+      v2MouthWidth: 4.5, v2MouthOpen: 0, v2MouthSmile: -4.5, v2MouthY: 10,
+      v2EyeSquint: 0.6, v2EyeTilt: 44, v2EyeSpacing: 16, v2EyeSize: 7.5,
+      v2Turbulence: 45, v2RiseSpeed: 2, v2SparkCount: 30, v2Color: "#ff0000"
+    },
+    dumb: {
+      v2MouthWidth: 20, v2MouthOpen: 0, v2MouthSmile: 2, v2MouthY: 13,
+      v2EyeSquint: 0, v2EyeTilt: 0, v2EyeSpacing: 26, v2EyeSize: 2,
+      v2Turbulence: 20, v2RiseSpeed: 0.8, v2SparkCount: 5, v2Color: "#10c8a8"
+    },
+    sleepy: {
+      v2MouthWidth: 6, v2MouthOpen: 0, v2MouthSmile: 0, v2MouthY: 14,
+      v2EyeSquint: 0.8, v2EyeTilt: 0, v2EyeSpacing: 16, v2EyeSize: 5,
+      v2Turbulence: 15, v2RiseSpeed: 0.5, v2SparkCount: 2, v2Color: "#aaccff"
+    },
+    thinking: {
+      v2MouthWidth: 5, v2MouthOpen: 0, v2MouthSmile: -2.5, v2MouthY: 7,
+      v2EyeSquint: 0.6, v2EyeTilt: -10, v2EyeSpacing: 12, v2EyeSize: 6.5,
+      v2Turbulence: 25, v2RiseSpeed: 1, v2SparkCount: 10, v2Color: "#10c8a8"
+    }
   };
 
-  const applyPreset = (name: keyof typeof presets) => {
-    const p = presets[name];
-    setMood(p.mood); setSphereOpacity(p.sphereOpacity); setSphereScale(p.sphereScale);
-    setFlameAmplitude(p.flameAmplitude); setFlameIntensity(p.flameIntensity);
-    setFlameDrift(p.flameDrift); setFlameNoiseScale(p.flameNoiseScale);
-    setFlameUpwardBias(p.flameUpwardBias); setFlameSpread(p.flameSpread);
-    setFlameGlowSpread(p.flameGlowSpread);
+  const applyPreset = (p: any) => {
+    if (p.v2MouthWidth !== undefined) setV2MouthWidth(p.v2MouthWidth);
+    if (p.v2MouthOpen !== undefined) setV2MouthOpen(p.v2MouthOpen);
+    if (p.v2MouthSmile !== undefined) setV2MouthSmile(p.v2MouthSmile);
+    if (p.v2MouthY !== undefined) setV2MouthY(p.v2MouthY);
+    if (p.v2EyeSquint !== undefined) setV2EyeSquint(p.v2EyeSquint);
+    if (p.v2EyeTilt !== undefined) setV2EyeTilt(p.v2EyeTilt);
+    if (p.v2EyeSpacing !== undefined) setV2EyeSpacing(p.v2EyeSpacing);
+    if (p.v2EyeSize !== undefined) setV2EyeSize(p.v2EyeSize);
+    if (p.v2Turbulence !== undefined) setV2Turbulence(p.v2Turbulence);
+    if (p.v2RiseSpeed !== undefined) setV2RiseSpeed(p.v2RiseSpeed);
+    if (p.v2SparkCount !== undefined) setV2SparkCount(p.v2SparkCount);
+    if (p.v2Color !== undefined) setV2Color(p.v2Color);
   };
 
-  const sliders = [
+  const generalSliders = [
     { label: responsive ? "Overall Size (Auto)" : "Overall Size", value: size, set: setSize, min: 80, max: 320, step: 10, disabled: responsive },
     { label: "Speech Font Size",   value: speechFontSize,   set: setSpeechFontSize,  min: 10,  max: 32,  step: 1    },
     { label: "Speech Auto Delay",  value: speechDisappearDelay, set: setSpeechDisappearDelay, min: 1000, max: 10000, step: 500 },
-    { label: "Sphere Opacity",    value: sphereOpacity,   set: setSphereOpacity,   min: 0,   max: 1,   step: 0.1  },
-    { label: "Sphere Scale",      value: sphereScale,     set: setSphereScale,     min: 0.5, max: 2,   step: 0.1  },
-    { label: "Flame Amplitude",   value: flameAmplitude,  set: setFlameAmplitude,  min: 0,   max: 80,  step: 5    },
-    { label: "Flame Intensity",   value: flameIntensity,  set: setFlameIntensity,  min: 0,   max: 2,   step: 0.1  },
-    { label: "Flame Glow Spread", value: flameGlowSpread, set: setFlameGlowSpread, min: 0,   max: 2,   step: 0.1  },
-    { label: "Flame Drift",       value: flameDrift,      set: setFlameDrift,      min: 0,   max: 3,   step: 0.1  },
-    { label: "Flame Noise Scale", value: flameNoiseScale, set: setFlameNoiseScale, min: 0.3, max: 3,   step: 0.1  },
-    { label: "Flame Upward Bias", value: flameUpwardBias, set: setFlameUpwardBias, min: 0,   max: 1.5, step: 0.05 },
-    { label: "Flame Spread",      value: flameSpread,     set: setFlameSpread,     min: 0.5, max: 4,   step: 0.1  },
+  ];
+
+  const v2Sliders = [
+    { label: "V2 Rise Speed",    value: v2RiseSpeed,   set: setV2RiseSpeed,   min: 0,    max: 3,    step: 0.1 },
+    { label: "V2 Size",          value: v2Size,        set: setV2Size,        min: 0.5,  max: 3,    step: 0.1 },
+    { label: "V2 Turbulence",    value: v2Turbulence,  set: setV2Turbulence,  min: 0,    max: 50,   step: 1 },
+    { label: "V2 Noise Freq",    value: v2NoiseFreq,   set: setV2NoiseFreq,   min: 0.001,max: 0.05, step: 0.001 },
+    { label: "V2 Spark Count",   value: v2SparkCount,  set: setV2SparkCount,  min: 0,    max: 40,   step: 1 },
+    { label: "V2 Wind",          value: v2Wind,        set: setV2Wind,        min: -2,   max: 2,    step: 0.1 },
+    { label: "V2 Eye Spacing",   value: v2EyeSpacing,  set: setV2EyeSpacing,  min: 5,    max: 30,   step: 1 },
+    { label: "V2 Eye Size",      value: v2EyeSize,     set: setV2EyeSize,     min: 2,    max: 15,   step: 0.5 },
+    { label: "V2 Eye Squint",    value: v2EyeSquint,   set: setV2EyeSquint,   min: 0,    max: 1,    step: 0.1 },
+    { label: "V2 Eye Tilt",      value: v2EyeTilt,     set: setV2EyeTilt,     min: -45,  max: 45,   step: 1 },
+    { label: "V2 Mouth Width",   value: v2MouthWidth,  set: setV2MouthWidth,  min: 2,    max: 20,   step: 0.5 },
+    { label: "V2 Mouth Open",    value: v2MouthOpen,   set: setV2MouthOpen,   min: 0,    max: 15,   step: 0.5 },
+    { label: "V2 Mouth Smile",   value: v2MouthSmile,  set: setV2MouthSmile,  min: -10,  max: 15,   step: 0.5 },
+    { label: "V2 Mouth Y",       value: v2MouthY,      set: setV2MouthY,      min: 0,    max: 30,   step: 1 },
   ];
 
   return (
@@ -158,14 +222,15 @@ export default function Demo() {
       {/* Main grid */}
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: spacing.xl, alignItems: "start" }}>
 
-        {/* Entity Viewer */}
+        {/* Entity Viewer(s) */}
         <div style={panelStyle}>
           <PanelCorners />
           <PanelHeader>Entity Viewer</PanelHeader>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.lg }}>
+
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: spacing.lg }}>
             <div style={{
               width: responsive ? "100%" : undefined,
-              height: responsive ? "280px" : undefined,
+              height: responsive ? "400px" : undefined,
               maxWidth: responsive ? "100%" : undefined,
               border: responsive ? `1px dashed ${colors.border}` : "1px solid transparent",
               padding: responsive ? spacing.md : undefined,
@@ -177,37 +242,44 @@ export default function Demo() {
               overflow: responsive ? "hidden" : "visible",
               transition: "border 0.28s, height 0.28s",
             }}>
-              <Banaspati
-                mood={mood}
-                sphereOpacity={sphereOpacity} sphereScale={sphereScale}
-                flameAmplitude={flameAmplitude} flameIntensity={flameIntensity}
-                flameDrift={flameDrift} flameNoiseScale={flameNoiseScale}
-                flameUpwardBias={flameUpwardBias} flameSpread={flameSpread}
-                flameGlowSpread={flameGlowSpread}
-                speech={speech || undefined}
-                speechKey={speechKey}
-                speechFontSize={speechFontSize}
-                speechDisappearDelay={speechDisappearDelay}
-                followCursor={followCursor}
-                lookAt={followCursor ? undefined : lookAt}
-                size={size}
-                responsive={responsive}
-                onClick={() => {
-                  setClickCount((c) => c + 1);
-                  setMood("excited");
-                  setTimeout(() => setMood("happy"), 500);
-                  setTimeout(() => setMood("idle"), 1500);
-                }}
-              />
-            </div>
-          </div>
+              <BanaspatiV2
+                  v2Color={v2Color}
+                  v2Wind={v2Wind}
+                  v2RiseSpeed={v2RiseSpeed}
+                  v2Size={v2Size}
+                  v2Turbulence={v2Turbulence}
+                  v2NoiseFreq={v2NoiseFreq}
+                  v2SparkCount={v2SparkCount}
+                  v2ShowFace={v2ShowFace}
+                  v2FaceColor={v2FaceColor}
+                  v2EyeSpacing={v2EyeSpacing}
+                  v2EyeSize={v2EyeSize}
+                  v2EyeSquint={v2EyeSquint}
+                  v2EyeTilt={v2EyeTilt}
+                  v2MouthWidth={v2MouthWidth}
+                  v2MouthOpen={v2MouthOpen}
+                  v2MouthSmile={v2MouthSmile}
+                  v2MouthY={v2MouthY}
+                  speech={speech || undefined}
+                  speechKey={speechKey}
+                  speechFontSize={speechFontSize}
+                  speechDisappearDelay={speechDisappearDelay}
+                  followCursor={followCursor}
+                  lookAt={followCursor ? undefined : lookAt}
+                  size={size}
+                  responsive={responsive}
+                  onClick={() => setClickCount((c) => c + 1)}
+                />
+              </div>
+
+          </div>{/* end entity row */}
           <div style={{ marginTop: spacing.xl, paddingTop: spacing.lg, borderTop: `1px solid ${colors.border}`, display: "grid", gridTemplateColumns: "1fr 1fr", gap: `${spacing.sm}px ${spacing.lg}px`, fontSize: fontSizes.xs }}>
             {[
-              ["STATUS",       mood.toUpperCase()],
+              ["STATUS",       "ACTIVE"],
               ["INTERACTIONS", clickCount.toString().padStart(4, "0")],
-              ["OPACITY",      sphereOpacity.toFixed(1)],
-              ["SCALE",        sphereScale.toFixed(1)],
-              ["GLOW SPREAD",  flameGlowSpread.toFixed(1)],
+              ["OPACITY",      "1.0"],
+              ["SCALE",        "1.0"],
+              ["GLOW SPREAD",  "1.0"],
               ["RESPONSIVE",   responsive ? "ON" : "OFF"],
               ["OVERALL SIZE", responsive ? "AUTO (RESPONSIVE)" : `${size}px`],
               ["SPEECH SIZE",  `${speechFontSize}px`],
@@ -377,10 +449,10 @@ export default function Demo() {
           <div style={{ marginBottom: spacing.xl }}>
             <label style={sectionLabelStyle}>▸ Presets</label>
             <div style={{ display: "flex", gap: spacing.sm, flexWrap: "wrap" }}>
-              {Object.keys(presets).map((name) => (
+              {Object.keys(PRESETS).map((name) => (
                 <button
                   key={name}
-                  onClick={() => applyPreset(name as keyof typeof presets)}
+                  onClick={() => applyPreset(PRESETS[name as keyof typeof PRESETS])}
                   style={{ padding: `${spacing.sm}px ${spacing.lg}px`, background: "rgba(120,160,200,0.06)", color: colors.hi, border: `1px solid ${colors.border}`, cursor: "pointer", fontWeight: 400, textTransform: "uppercase", fontFamily: "inherit", fontSize: fontSizes.xs, letterSpacing: "0.1em", transition: "all 0.2s" }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(120,160,200,0.14)"; e.currentTarget.style.borderColor = colors.borderHi; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(120,160,200,0.06)"; e.currentTarget.style.borderColor = colors.border; }}
@@ -389,16 +461,6 @@ export default function Demo() {
             </div>
           </div>
 
-          {/* Mood */}
-          <div style={{ marginBottom: spacing.xl }}>
-            <label style={sectionLabelStyle}>▸ Mood <span style={{ color: colors.mid }}>{mood}</span></label>
-            <select value={mood} onChange={(e) => setMood(e.target.value as AvatarMood)}
-              style={{ width: "100%", padding: `${spacing.sm}px ${spacing.md}px`, border: `1px solid ${colors.border}`, background: "rgba(8,16,32,0.9)", color: colors.hi, fontSize: fontSizes.sm, fontFamily: "inherit", cursor: "pointer", outline: "none" }}>
-              {(["idle", "happy", "surprised", "sleepy", "excited", "suspicious", "angry", "sad", "thinking"] as AvatarMood[]).map((m) => (
-                <option key={m} value={m} style={{ background: colors.bg }}>{m.toUpperCase()}</option>
-              ))}
-            </select>
-          </div>
           {/* Gaze Control */}
           <div style={{ marginBottom: spacing.xl }}>
             <label style={sectionLabelStyle}>▸ Gaze Control</label>
@@ -435,7 +497,8 @@ export default function Demo() {
           </div>
           {/* Sliders */}
           <div style={{ display: "flex", flexDirection: "column", gap: spacing.lg }}>
-            {sliders.map((s) => {
+            <label style={sectionLabelStyle}>▸ Controls</label>
+            {[...generalSliders, ...v2Sliders].map((s) => {
               const disabled = s.disabled;
               let valueText = disabled ? "AUTO" : s.value.toFixed(2);
               if (!disabled) {
