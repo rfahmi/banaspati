@@ -28,6 +28,7 @@ export interface BanaspatiV2Props {
   speechDisappearDelay?: number;
   size?: number;
   responsive?: boolean;
+  onPointerDown?: (e: React.PointerEvent<HTMLDivElement>) => void;
 }
 
 export function BanaspatiV2({
@@ -57,6 +58,7 @@ export function BanaspatiV2({
   speechDisappearDelay = 3000,
   size           = 160,
   responsive     = false,
+  onPointerDown,
 }: BanaspatiV2Props) {
   // ── Sizing ────────────────────────────────────────────────────────────────
   const [observedSize, setObservedSize] = useState<number>(size);
@@ -426,6 +428,7 @@ export function BanaspatiV2({
         d.targetCy = clickY;
       }
     }
+    onPointerDown?.(e);
     onClick?.();
   };
 
